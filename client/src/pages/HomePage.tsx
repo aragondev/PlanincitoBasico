@@ -21,10 +21,6 @@ export function HomePage({ status, busy, onCreate, onJoin }: Props) {
     <main className="home">
       <section className="home__intro">
         <h1>Planincito</h1>
-        <p>
-          Estimaciones en tiempo real para equipos de hasta 8 personas. Sin cuentas
-          y sin historial: la sala existe mientras haya alguien dentro.
-        </p>
       </section>
 
       <div className="home__cards">
