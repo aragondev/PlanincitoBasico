@@ -82,7 +82,9 @@ export function App() {
         busy={busy}
         onCreate={room.createRoom}
         onJoin={(code, alias) => {
-          navigateToRoom(code);
+          // No cambiamos la URL aquí: si el código es inválido o la sala no
+          // existe, el usuario debe quedarse en el inicio con el aviso de error.
+          // El `useEffect` de arriba sincroniza la URL sólo cuando se entra.
           room.joinRoom(code, alias);
         }}
       />
