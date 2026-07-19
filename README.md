@@ -1,8 +1,6 @@
 # Planincito
 
-Planning Poker temporal y en tiempo real para equipos de hasta 8 personas.
-Sin cuentas, sin base de datos y sin historial: una sala vive en memoria
-mientras haya participantes y se elimina 60 segundos después de quedar vacía.
+Planning Poker temporal
 
 ## Arquitectura
 
