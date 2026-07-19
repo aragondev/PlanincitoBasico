@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: planincito-server
+    runtime: node
+    plan: free
+    # El build se hace desde la raíz del monorepo para incluir `shared/`.
+    rootDir: .
+    buildCommand: npm ci && npm run build:server
+    startCommand: npm start --workspace server
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: CLIENT_ORIGIN
+        sync: false
+      # Frase compartida de acceso: se define en el panel, nunca en el repo.
+      - key: ROOM_ACCESS_SECRET
+        sync: false
+      - key: MAX_ACTIVE_ROOMS
+        value: 25
+      - key: MAX_PARTICIPANTS_PER_ROOM
+        value: 8
+      - key: EMPTY_ROOM_GRACE_MS
+        value: 60000
+      - key: DISCONNECTED_PARTICIPANT_GRACE_MS
+        value: 60000

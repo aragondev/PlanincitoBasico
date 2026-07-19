@@ -1,0 +1,643 @@
+:root {
+  --bg: #0f1420;
+  --surface: #182031;
+  --surface-2: #212b40;
+  --border: #2d3852;
+  --text: #eef2f9;
+  --muted: #9aa7bd;
+  --accent: #4f8cff;
+  --accent-strong: #2f6fe4;
+  --danger: #e2586a;
+  --ok: #43c59e;
+  --radius: 12px;
+  --gap: 1rem;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+#root {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--gap);
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.error {
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+/* ---------- Formularios y botones ---------- */
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+
+input[type="text"] {
+  inline-size: 100%;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+input[type="text"]:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 0.6rem 0.9rem;
+  min-block-size: 44px;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent-strong);
+  color: #08111f;
+  font-weight: 600;
+}
+
+button.secondary {
+  background: var(--surface-2);
+}
+
+button.ghost {
+  background: transparent;
+}
+
+button.danger {
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.checkbox input {
+  inline-size: 18px;
+  block-size: 18px;
+}
+
+/* ---------- Paneles ---------- */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--gap);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.panel__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.panel__count {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+/* ---------- Inicio ---------- */
+
+.home__intro {
+  margin-block: 1.5rem;
+}
+
+.home__intro h1 {
+  font-size: 1.6rem;
+}
+
+.home__intro p {
+  color: var(--muted);
+  max-inline-size: 60ch;
+}
+
+.home__cards {
+  display: grid;
+  gap: var(--gap);
+}
+
+.join {
+  max-inline-size: 420px;
+  margin: 3rem auto;
+}
+
+/* ---------- Estado de conexión ---------- */
+
+.connection {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.connection__dot {
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.connection--connected .connection__dot {
+  background: var(--ok);
+}
+
+.connection--connecting .connection__dot,
+.connection--reconnecting .connection__dot,
+.connection--starting-server .connection__dot {
+  background: #e8b04b;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.connection--room-gone .connection__dot {
+  background: var(--danger);
+}
+
+.connection__hint {
+  inline-size: 100%;
+  font-size: 0.78rem;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- Sala ---------- */
+
+.room {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.room-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-block: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.room-header__identity {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.room-header__code strong {
+  letter-spacing: 0.12em;
+  font-size: 1.25rem;
+}
+
+.room-header__round {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.room-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.topic {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--gap);
+}
+
+.topic__label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.topic__value {
+  margin: 0.25rem 0 0;
+  font-size: 1.05rem;
+}
+
+.topic__form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.room__body {
+  display: grid;
+  gap: var(--gap);
+}
+
+/* ---------- Participantes ---------- */
+
+.participants {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.participant {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 0.75rem;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.participant--offline {
+  opacity: 0.55;
+}
+
+.participant__main {
+  display: flex;
+  flex-direction: column;
+}
+
+.participant__alias {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.participant__tag {
+  font-size: 0.7rem;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 0 0.4rem;
+}
+
+.participant__role,
+.participant__offline {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.participant__status--voted {
+  color: var(--ok);
+}
+
+.participant__card {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.participant__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.participant__actions button {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.55rem;
+  min-block-size: 36px;
+}
+
+/* ---------- Mesa ---------- */
+
+.table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.table__surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.table__summary {
+  margin: 0;
+  color: var(--muted);
+}
+
+.table__seats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.seat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  inline-size: 68px;
+}
+
+.seat--offline {
+  opacity: 0.5;
+}
+
+.seat__card {
+  inline-size: 46px;
+  block-size: 66px;
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.seat__card--filled {
+  border-style: solid;
+  background: var(--accent-strong);
+}
+
+.seat__card--revealed {
+  background: var(--surface-2);
+  border-color: var(--accent);
+}
+
+.seat__alias {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Mazo ---------- */
+
+.deck {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.deck__cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.card {
+  inline-size: 56px;
+  block-size: 80px;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  background: var(--surface);
+  transition: transform 0.12s ease;
+}
+
+.card:not(:disabled):hover {
+  transform: translateY(-4px);
+}
+
+.card--selected {
+  background: var(--accent);
+  border-color: var(--accent-strong);
+  color: #08111f;
+}
+
+.card--static {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.deck__hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.controls button {
+  flex: 1;
+}
+
+/* ---------- Resultados ---------- */
+
+.stats {
+  display: flex;
+  gap: var(--gap);
+  flex-wrap: wrap;
+}
+
+.stat {
+  flex: 1 1 90px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  padding: 0.6rem;
+  text-align: center;
+}
+
+.stat__label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.stat__value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.distribution {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.distribution__row {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr 2rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.distribution__value {
+  font-weight: 700;
+  text-align: center;
+}
+
+.distribution__bar {
+  block-size: 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.distribution__fill {
+  display: block;
+  block-size: 100%;
+  background: var(--accent);
+}
+
+.distribution__count {
+  text-align: right;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* ---------- Avisos y diálogos ---------- */
+
+.toast {
+  position: fixed;
+  inset-block-end: 1rem;
+  inset-inline: 1rem;
+  max-inline-size: 480px;
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+}
+
+.toast--error {
+  border-color: var(--danger);
+}
+
+.toast button {
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  min-block-size: auto;
+  padding: 0 0.25rem;
+}
+
+.dialog__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 55%);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  max-inline-size: 380px;
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* ---------- Escritorio ---------- */
+
+@media (min-width: 760px) {
+  #root {
+    padding: 1.5rem;
+  }
+
+  .home__cards {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .room-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* En escritorio la mesa ocupa el centro y los participantes la columna lateral. */
+  .room__body {
+    grid-template-columns: minmax(240px, 320px) 1fr;
+    align-items: start;
+  }
+
+  .room__center {
+    order: 2;
+  }
+}

@@ -1,0 +1,11 @@
+# Documento de planificación interno: se conserva en local, no en el repositorio.
+PLAN.md
+
+node_modules/
+dist/
+*.log
+.env
+.env.local
+.DS_Store
+coverage/
+.vite/
