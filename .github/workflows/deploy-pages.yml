@@ -31,6 +31,10 @@ jobs:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
         run: npm run build:client
       - uses: actions/configure-pages@v5
+        # Habilita Pages desde el propio workflow: evita depender de activarlo
+        # a mano en Settings, paso que suele no persistir en la interfaz.
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: client/dist
