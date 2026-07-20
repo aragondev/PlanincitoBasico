@@ -51,6 +51,7 @@ export function createApp(config: Config = defaultConfig): App {
     maxParticipantsPerRoom: config.maxParticipantsPerRoom,
     emptyRoomGraceMs: config.emptyRoomGraceMs,
     disconnectedParticipantGraceMs: config.disconnectedParticipantGraceMs,
+    maxRoundHistory: config.maxRoundHistory,
   });
 
   // La frase sólo protege la creación de salas: entrar a una existente ya

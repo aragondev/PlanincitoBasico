@@ -44,6 +44,16 @@ export type RoundResults = {
   totalVotes: number;
 };
 
+/** Una ronda ya revelada. Vive en memoria con la sala y muere con ella. */
+export type RoundHistoryEntry = {
+  round: number;
+  topic: string;
+  results: RoundResults;
+  /** Alias y carta de cada quien, para que se lea aunque ya se hayan ido. */
+  votes: { alias: string; vote: CardValue }[];
+  revealedAt: number;
+};
+
 export type PublicRoomState = {
   code: string;
   topic: string;
@@ -52,6 +62,8 @@ export type PublicRoomState = {
   facilitatorId: string;
   participants: PublicParticipant[];
   results: RoundResults | null;
+  /** Rondas reveladas de esta sesión, de la más reciente a la más antigua. */
+  history: RoundHistoryEntry[];
   maxParticipants: number;
 };
 

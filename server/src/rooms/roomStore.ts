@@ -4,6 +4,7 @@ import type {
   ParticipantRole,
   PublicParticipant,
   PublicRoomState,
+  RoundHistoryEntry,
 } from "@planincito/shared";
 import { generateId, generateReconnectionToken, generateRoomCode } from "./codes.js";
 import { RoomOperationError } from "./errors.js";
@@ -32,6 +33,8 @@ export type Room = {
   createdAt: number;
   lastActivityAt: number;
   emptySince?: number;
+  /** Rondas reveladas de esta sesión, de la más reciente a la más antigua. */
+  history: RoundHistoryEntry[];
 };
 
 export type RoomStoreOptions = {
@@ -39,6 +42,8 @@ export type RoomStoreOptions = {
   maxParticipantsPerRoom: number;
   emptyRoomGraceMs: number;
   disconnectedParticipantGraceMs: number;
+  /** Tope de rondas guardadas: el historial no debe crecer sin límite (§3.6). */
+  maxRoundHistory?: number;
   now?: () => number;
 };
 
@@ -163,6 +168,7 @@ export class RoomStore extends EventEmitter {
       votes: new Map(),
       createdAt: timestamp,
       lastActivityAt: timestamp,
+      history: [],
     };
 
     this.rooms.set(room.id, room);
@@ -327,9 +333,35 @@ export class RoomStore extends EventEmitter {
   reveal(code: string, participantId: string): Room {
     const room = this.requireRoom(code);
     this.requireFacilitator(room, participantId);
-    room.status = "revealed";
+    if (room.status !== "revealed") {
+      room.status = "revealed";
+      this.recordRound(room);
+    }
     this.touch(room);
     return room;
+  }
+
+  /**
+   * Guarda la ronda recién revelada. Se llama una sola vez por ronda: revelar
+   * de nuevo sin reiniciar no duplica la entrada.
+   */
+  private recordRound(room: Room): void {
+    const votes: RoundHistoryEntry["votes"] = [];
+    for (const [participantId, vote] of room.votes) {
+      const participant = room.participants.get(participantId);
+      if (participant) votes.push({ alias: participant.alias, vote });
+    }
+
+    room.history.unshift({
+      round: room.round,
+      topic: room.topic,
+      results: computeResults(room.votes.values()),
+      votes: votes.sort((a, b) => a.alias.localeCompare(b.alias)),
+      revealedAt: this.now(),
+    });
+
+    const max = this.options.maxRoundHistory ?? 50;
+    if (room.history.length > max) room.history.length = max;
   }
 
   restartRound(code: string, participantId: string, topic?: string): Room {
@@ -447,6 +479,7 @@ export class RoomStore extends EventEmitter {
   deleteRoom(room: Room, reason: string): void {
     room.participants.clear();
     room.votes.clear();
+    room.history.length = 0;
     this.rooms.delete(room.id);
     this.roomIdByCode.delete(room.code);
     this.emitStore("room-closed", { code: room.code, reason });
@@ -456,6 +489,7 @@ export class RoomStore extends EventEmitter {
     for (const room of [...this.rooms.values()]) {
       room.participants.clear();
       room.votes.clear();
+      room.history.length = 0;
     }
     this.rooms.clear();
     this.roomIdByCode.clear();
@@ -487,6 +521,7 @@ export class RoomStore extends EventEmitter {
       facilitatorId: room.facilitatorId,
       participants,
       results: revealed ? computeResults(room.votes.values()) : null,
+      history: room.history,
       maxParticipants: this.options.maxParticipantsPerRoom,
     };
   }

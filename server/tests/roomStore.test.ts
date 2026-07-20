@@ -251,6 +251,95 @@ describe("facilitador y desconexiones", () => {
   });
 });
 
+describe("historial de rondas", () => {
+  it("guarda cada ronda revelada con tema, resultados y votos", () => {
+    const store = createStore();
+    const { room, participant: ana } = store.createRoom("Ana");
+    const bea = store.joinRoom(room.code, "Bea").participant;
+
+    store.setTopic(room.code, ana.id, "Historia 1");
+    store.submitVote(room.code, ana.id, "3");
+    store.submitVote(room.code, bea.id, "5");
+    store.reveal(room.code, ana.id);
+
+    expect(room.history).toHaveLength(1);
+    const entrada = room.history[0]!;
+    expect(entrada.round).toBe(1);
+    expect(entrada.topic).toBe("Historia 1");
+    expect(entrada.results.average).toBe(4);
+    expect(entrada.votes).toEqual([
+      { alias: "Ana", vote: "3" },
+      { alias: "Bea", vote: "5" },
+    ]);
+  });
+
+  it("acumula rondas con la más reciente primero", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana");
+
+    for (const carta of ["1", "2", "3"] as const) {
+      store.submitVote(room.code, participant.id, carta);
+      store.reveal(room.code, participant.id);
+      store.restartRound(room.code, participant.id);
+    }
+
+    expect(room.history.map((h) => h.round)).toEqual([3, 2, 1]);
+    expect(room.history[0]!.results.average).toBe(3);
+  });
+
+  it("revelar dos veces la misma ronda no duplica la entrada", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana");
+    store.submitVote(room.code, participant.id, "5");
+    store.reveal(room.code, participant.id);
+    store.reveal(room.code, participant.id);
+    expect(room.history).toHaveLength(1);
+  });
+
+  it("conserva el alias aunque el participante se haya ido", () => {
+    const store = createStore();
+    const { room, participant: ana } = store.createRoom("Ana");
+    const bea = store.joinRoom(room.code, "Bea").participant;
+    store.submitVote(room.code, bea.id, "8");
+    store.reveal(room.code, ana.id);
+
+    store.kick(room.code, ana.id, bea.id);
+    expect(room.participants.has(bea.id)).toBe(false);
+    expect(room.history[0]!.votes).toEqual([{ alias: "Bea", vote: "8" }]);
+  });
+
+  it("el historial no crece más allá del tope configurado", () => {
+    const store = createStore({ maxRoundHistory: 3 });
+    const { room, participant } = store.createRoom("Ana");
+
+    for (let i = 0; i < 10; i += 1) {
+      store.submitVote(room.code, participant.id, "5");
+      store.reveal(room.code, participant.id);
+      store.restartRound(room.code, participant.id);
+    }
+
+    expect(room.history).toHaveLength(3);
+    expect(room.history.map((h) => h.round)).toEqual([10, 9, 8]);
+  });
+
+  it("el estado público incluye el historial", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana");
+    store.submitVote(room.code, participant.id, "13");
+    store.reveal(room.code, participant.id);
+    expect(store.buildPublicState(room).history).toHaveLength(1);
+  });
+
+  it("una ronda sin votos numéricos queda registrada sin promedio", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana");
+    store.submitVote(room.code, participant.id, "coffee");
+    store.reveal(room.code, participant.id);
+    expect(room.history[0]!.results.average).toBeNull();
+    expect(room.history[0]!.votes).toEqual([{ alias: "Ana", vote: "coffee" }]);
+  });
+});
+
 describe("limpieza de salas", () => {
   it("mantiene la sala si alguien vuelve dentro del margen", () => {
     const store = createStore();
@@ -283,8 +372,10 @@ describe("limpieza de salas", () => {
 
   it("la memoria vuelve a cero tras crear y destruir salas repetidamente", () => {
     const store = createStore();
+    const salas: { history: unknown[] }[] = [];
     for (let cycle = 0; cycle < 200; cycle += 1) {
       const { room, participant } = store.createRoom("Ana");
+      salas.push(room);
       store.joinRoom(room.code, "Bea");
       store.submitVote(room.code, participant.id, "5");
       store.reveal(room.code, participant.id);
@@ -295,6 +386,8 @@ describe("limpieza de salas", () => {
       store.sweep();
     }
     expect(store.size).toBe(0);
+    // El historial también debe liberarse al cerrar la sala (§3.6).
+    expect(salas.every((room) => room.history.length === 0)).toBe(true);
   });
 
   it("deja de aceptar salas nuevas durante el cierre", () => {
