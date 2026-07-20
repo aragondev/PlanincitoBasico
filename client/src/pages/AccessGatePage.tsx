@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { getAccessSecret } from "../socket/accessSecret";
 
 type Props = {
   /** `true` cuando el servidor bloqueó la IP por demasiados intentos. */
@@ -11,7 +10,9 @@ type Props = {
 };
 
 export function AccessGatePage({ locked, rejected, busy, onSubmit }: Props) {
-  const [secret, setSecret] = useState(() => getAccessSecret());
+  // Campo vacío a propósito: si hubiera una frase válida guardada nunca
+  // veríamos esta pantalla, así que rellenarlo sólo mostraría una errónea.
+  const [secret, setSecret] = useState("");
   const trimmed = secret.trim();
 
   return (
