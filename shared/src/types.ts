@@ -70,7 +70,10 @@ export type RoomErrorCode =
   | "PARTICIPANT_NOT_FOUND"
   | "RECONNECTION_FAILED"
   | "RATE_LIMITED"
-  | "SERVER_SHUTTING_DOWN";
+  | "SERVER_SHUTTING_DOWN"
+  /** Falta la frase de acceso o es incorrecta (sólo al crear una sala). */
+  | "UNAUTHORIZED"
+  | "TOO_MANY_ATTEMPTS";
 
 export type RoomError = {
   code: RoomErrorCode;

@@ -5,7 +5,7 @@ import { Server } from "socket.io";
 import { SERVER_EVENTS } from "@planincito/shared";
 import { config as defaultConfig, type Config } from "./config.js";
 import { RoomStore } from "./rooms/roomStore.js";
-import { registerAccessGate } from "./socket/accessGate.js";
+import { AccessGate } from "./socket/accessGate.js";
 import { registerSocketHandlers, type AppServer } from "./socket/handlers.js";
 
 export type App = {
@@ -53,14 +53,14 @@ export function createApp(config: Config = defaultConfig): App {
     disconnectedParticipantGraceMs: config.disconnectedParticipantGraceMs,
   });
 
-  // La puerta de acceso se registra antes: un socket sin la frase correcta
-  // no llega a los handlers de sala.
-  registerAccessGate(io, {
+  // La frase sólo protege la creación de salas: entrar a una existente ya
+  // requiere conocer su código.
+  const accessGate = new AccessGate({
     secret: config.roomAccessSecret,
     maxAttempts: config.accessMaxAttempts,
     windowMs: config.accessAttemptWindowMs,
   });
-  registerSocketHandlers(io, store, config);
+  registerSocketHandlers(io, store, config, accessGate);
 
   // Un único barrido de mantenimiento para todo el proceso (§3.6).
   const cleanup = setInterval(() => store.sweep(), config.cleanupIntervalMs);

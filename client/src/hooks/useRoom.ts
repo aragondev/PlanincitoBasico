@@ -8,14 +8,10 @@ import {
   type RoomError,
   type SessionCredentials,
 } from "@planincito/shared";
-import {
-  TOO_MANY_ATTEMPTS,
-  UNAUTHORIZED,
-  createSocket,
-  type AppSocket,
-} from "../socket/client";
+import { createSocket, type AppSocket } from "../socket/client";
 import {
   clearAccessSecret,
+  getAccessSecret,
   persistAccessSecret,
   stageAccessSecret,
 } from "../socket/accessSecret";
@@ -46,7 +42,7 @@ export type RoomApi = {
   error: RoomError | null;
   notice: string | null;
   accessRejected: boolean;
-  resuming: boolean;
+  booting: boolean;
   myId: string | null;
   isFacilitator: boolean;
   myVote: CardValue | undefined;
@@ -83,7 +79,7 @@ export function useRoom(): RoomApi {
    * Hay una sesión guardada que aún estamos recuperando. Evita que al
    * recargar aparezca un instante la pantalla de "entrar a la sala".
    */
-  const [resuming, setResuming] = useState(() => loadSession() !== null);
+  const [booting, setBooting] = useState(() => loadSession() !== null);
 
   if (socketRef.current === null) socketRef.current = createSocket();
   const socket = socketRef.current;
@@ -103,7 +99,10 @@ export function useRoom(): RoomApi {
     const intent = intentRef.current;
     if (!intent || !socket) return;
     if (intent.type === "create") {
-      socket.emit(CLIENT_EVENTS.ROOM_CREATE, { alias: intent.alias });
+      socket.emit(CLIENT_EVENTS.ROOM_CREATE, {
+        alias: intent.alias,
+        secret: getAccessSecret(),
+      });
     } else if (intent.type === "join") {
       socket.emit(CLIENT_EVENTS.ROOM_JOIN, {
         code: intent.code,
@@ -120,10 +119,7 @@ export function useRoom(): RoomApi {
 
     const onConnect = () => {
       if (coldStartTimer.current) clearTimeout(coldStartTimer.current);
-      // El servidor aceptó el handshake: recién ahora la frase es válida.
-      persistAccessSecret();
-      setAccessRejected(false);
-      triedSecretRef.current = false;
+      setBooting(false);
       setStatus("connected");
       setNotice(null);
       dispatchIntent();
@@ -135,20 +131,7 @@ export function useRoom(): RoomApi {
       armColdStartTimer();
     };
 
-    const onConnectError = (cause: Error) => {
-      // Una frase incorrecta no se arregla reintentando: paramos y la pedimos.
-      if (cause.message === UNAUTHORIZED || cause.message === TOO_MANY_ATTEMPTS) {
-        if (coldStartTimer.current) clearTimeout(coldStartTimer.current);
-        socket.disconnect();
-        // Sólo es "frase incorrecta" si veníamos de enviar una; la primera
-        // vez simplemente aún no la habíamos pedido.
-        // Una frase inválida no debe quedar guardada de sesiones anteriores.
-        clearAccessSecret();
-        setResuming(false);
-        if (triedSecretRef.current) setAccessRejected(true);
-        setStatus(cause.message === UNAUTHORIZED ? "unauthorized" : "locked");
-        return;
-      }
+    const onConnectError = () => {
       setStatus((current) => (current === "connected" ? "reconnecting" : current));
       armColdStartTimer();
     };
@@ -157,7 +140,11 @@ export function useRoom(): RoomApi {
       credentials?: SessionCredentials;
       state: PublicRoomState;
     }) => {
-      setResuming(false);
+      setBooting(false);
+      // Si llegamos a entrar, la frase usada era válida: recién ahora se guarda.
+      persistAccessSecret();
+      setAccessRejected(false);
+      triedSecretRef.current = false;
       setState(payload.state);
       setStatus("connected");
       if (payload.credentials) {
@@ -170,7 +157,16 @@ export function useRoom(): RoomApi {
     const onState = (payload: { state: PublicRoomState }) => setState(payload.state);
 
     const onError = (payload: RoomError) => {
-      setResuming(false);
+      setBooting(false);
+
+      // La frase sólo se exige al crear una sala.
+      if (payload.code === "UNAUTHORIZED" || payload.code === "TOO_MANY_ATTEMPTS") {
+        clearAccessSecret();
+        if (triedSecretRef.current) setAccessRejected(true);
+        setStatus(payload.code === "UNAUTHORIZED" ? "unauthorized" : "locked");
+        return;
+      }
+
       setError(payload);
       if (
         payload.code === "ROOM_NOT_FOUND" ||
@@ -238,10 +234,20 @@ export function useRoom(): RoomApi {
     [socket, dispatchIntent, armColdStartTimer],
   );
 
-  /** Reanuda automáticamente la sesión guardada al recargar la pestaña. */
+  /**
+   * Al abrir conectamos siempre: recupera la sesión si la hay y, de paso,
+   * Render despierta mientras el usuario escribe su alias.
+   */
   useEffect(() => {
     const saved = loadSession();
-    if (saved) start({ type: "reconnect", credentials: saved });
+    if (saved) {
+      start({ type: "reconnect", credentials: saved });
+      return;
+    }
+    intentRef.current = null;
+    setStatus("connecting");
+    armColdStartTimer();
+    socket.connect();
     // Sólo en el montaje inicial.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -270,11 +276,12 @@ export function useRoom(): RoomApi {
       triedSecretRef.current = true;
       setAccessRejected(false);
       setError(null);
-      setStatus("connecting");
-      armColdStartTimer();
-      socket.connect();
+      setStatus(socket.connected ? "connected" : "connecting");
+      // La intención de crear sigue pendiente: se reintenta con la frase nueva.
+      if (socket.connected) dispatchIntent();
+      else socket.connect();
     },
-    [socket, armColdStartTimer],
+    [socket, dispatchIntent],
   );
 
   const myId = credentials?.participantId ?? null;
@@ -287,7 +294,7 @@ export function useRoom(): RoomApi {
   const reset = useCallback(() => {
     clearSession();
     setAccessRejected(false);
-    setResuming(false);
+    setBooting(false);
     intentRef.current = null;
     setState(null);
     setCredentials(null);
@@ -305,7 +312,7 @@ export function useRoom(): RoomApi {
       error,
       notice,
       accessRejected,
-      resuming,
+      booting,
       myId,
       isFacilitator,
       myVote: effectiveVote,
@@ -334,7 +341,7 @@ export function useRoom(): RoomApi {
       reset,
     }),
     [
-      status, state, credentials, error, notice, accessRejected, resuming,
+      status, state, credentials, error, notice, accessRejected, booting,
       myId, isFacilitator,
       effectiveVote, start, emit, submitAccessSecret, reset,
     ],

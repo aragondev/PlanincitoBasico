@@ -19,6 +19,7 @@ import {
   parseRoomCode,
   parseTopic,
 } from "../validation/input.js";
+import type { AccessGate } from "./accessGate.js";
 import { RateLimiter } from "./rateLimiter.js";
 
 /** Sólo identificadores en el socket; nunca objetos de sala (§3.6). */
@@ -45,6 +46,7 @@ export function registerSocketHandlers(
   io: AppServer,
   store: RoomStore,
   config: Config,
+  accessGate: AccessGate,
 ): void {
   const limiter = new RateLimiter(
     config.rateLimitWindowMs,
@@ -158,6 +160,7 @@ export function registerSocketHandlers(
     socket.on(
       CLIENT_EVENTS.ROOM_CREATE,
       guard(socket, (payload) => {
+        accessGate.assertCanCreate(socket, payload?.secret);
         const alias = parseAlias(payload?.alias);
         const { room, participant } = store.createRoom(alias);
         enterRoom(socket, room, participant, SERVER_EVENTS.ROOM_CREATED);

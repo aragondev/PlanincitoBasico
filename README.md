@@ -124,27 +124,33 @@ https://aragondev.github.io/PlanincitoBasico/#/room/ABC123
 
 ## Acceso restringido
 
-El sitio publicado es accesible para cualquiera, pero sin la frase compartida no
-se puede abrir la conexión con el backend y la aplicación no sirve de nada.
+El sitio publicado es accesible para cualquiera, pero **crear una sala exige una
+frase compartida**. Sin ella nadie puede ocupar recursos de tu instancia.
 
-Define `ROOM_ACCESS_SECRET` en Render con una frase larga y compártela con el
-equipo. Se pide una sola vez por navegador y queda en `localStorage`.
+Define `ROOM_ACCESS_SECRET` en Render y comparte la frase con quien vaya a
+organizar sesiones:
 
 ```bash
 ROOM_ACCESS_SECRET="una-frase-larga-y-dificil-de-adivinar"
 ```
 
-La comprobación ocurre en el handshake de Socket.IO, antes de cualquier handler,
-así que un cliente sin la frase no puede crear ni entrar a salas. Los intentos
-fallidos se limitan por IP (`ACCESS_MAX_ATTEMPTS` en `ACCESS_ATTEMPT_WINDOW_MS`)
-para que una frase corta no se pueda adivinar por fuerza bruta.
+La frase se pide al pulsar *Crear sala*, no al abrir la aplicación, y queda
+guardada en el navegador tras el primer uso correcto. Distingue mayúsculas.
 
-Si dejas la variable vacía —lo habitual en desarrollo local— no hay restricción.
+**Entrar a una sala existente no pide frase**: para eso ya hace falta el código,
+que el servidor genera con 32⁶ combinaciones posibles y no es adivinable. Así
+quien recibe un enlace de invitación entra sin más, mientras que abrir salas
+nuevas —lo que consume la instancia— queda reservado a quien tiene la frase.
+
+Los intentos fallidos se limitan por IP (`ACCESS_MAX_ATTEMPTS` dentro de
+`ACCESS_ATTEMPT_WINDOW_MS`) para que una frase corta no se pueda adivinar por
+fuerza bruta. Si dejas la variable vacía —lo habitual en desarrollo local— no
+hay restricción.
 
 **Qué protege y qué no.** Es una clave compartida, no autenticación por persona:
-cualquiera que la reciba puede pasarla a otro, y no hay forma de revocar el
-acceso a una sola persona salvo cambiando la frase para todos. Suficiente para
-mantener afuera a desconocidos; insuficiente si necesitas saber quién entró.
+quien la reciba puede pasarla a otro, y revocarla a una sola persona obliga a
+cambiarla para todos. Suficiente para que nadie de fuera use tu instancia;
+insuficiente si necesitas saber quién creó cada sala.
 
 ## Limitaciones conocidas
 

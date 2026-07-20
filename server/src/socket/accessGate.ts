@@ -1,10 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
-import type { AppServer, AppSocket } from "./handlers.js";
+import type { Socket } from "socket.io";
+import { RoomOperationError } from "../rooms/errors.js";
 import { RateLimiter } from "./rateLimiter.js";
-
-/** El cliente distingue este motivo para pedir la frase en vez de reintentar. */
-export const UNAUTHORIZED = "UNAUTHORIZED";
-export const TOO_MANY_ATTEMPTS = "TOO_MANY_ATTEMPTS";
 
 /** Comparación de tiempo constante: los digests siempre miden 32 bytes. */
 function matches(expected: string, provided: unknown): boolean {
@@ -14,7 +11,7 @@ function matches(expected: string, provided: unknown): boolean {
 }
 
 /** Render va detrás de proxy: la IP real llega en `x-forwarded-for`. */
-function clientIp(socket: AppSocket): string {
+function clientIp(socket: Socket): string {
   const forwarded = socket.handshake.headers["x-forwarded-for"];
   const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
   return raw?.split(",")[0]?.trim() || socket.handshake.address;
@@ -28,24 +25,44 @@ export type AccessGateOptions = {
 };
 
 /**
- * Puerta de acceso compartida. Al ser el único candado del servicio, limita
- * los intentos fallidos por IP para que una frase corta no se pueda adivinar
- * por fuerza bruta.
+ * Protege únicamente la creación de salas, que es lo que consume recursos
+ * de la instancia. Entrar a una sala existente no pasa por aquí: para eso
+ * ya hace falta conocer el código, que es impredecible.
  */
-export function registerAccessGate(io: AppServer, options: AccessGateOptions): void {
-  if (!options.secret) return;
+export class AccessGate {
+  private readonly attempts: RateLimiter;
 
-  const attempts = new RateLimiter(options.windowMs, options.maxAttempts);
+  constructor(private readonly options: AccessGateOptions) {
+    this.attempts = new RateLimiter(options.windowMs, options.maxAttempts);
+  }
 
-  io.use((socket, next) => {
-    const ip = clientIp(socket as AppSocket);
+  get enabled(): boolean {
+    return this.options.secret !== "";
+  }
 
-    if (matches(options.secret, socket.handshake.auth?.["secret"])) {
-      attempts.forget(ip);
-      next();
+  /** Lanza si la frase falta, es incorrecta o hubo demasiados intentos. */
+  assertCanCreate(socket: Socket, provided: unknown): void {
+    if (!this.enabled) return;
+
+    const ip = clientIp(socket);
+
+    if (matches(this.options.secret, provided)) {
+      this.attempts.forget(ip);
       return;
     }
 
-    next(new Error(attempts.allow(ip) ? UNAUTHORIZED : TOO_MANY_ATTEMPTS));
-  });
+    // Al ser el único candado, limitamos los intentos para que una frase
+    // corta no se pueda adivinar por fuerza bruta.
+    if (!this.attempts.allow(ip)) {
+      throw new RoomOperationError(
+        "TOO_MANY_ATTEMPTS",
+        "Demasiados intentos fallidos. Espera unos minutos antes de volver a probar.",
+      );
+    }
+
+    throw new RoomOperationError(
+      "UNAUTHORIZED",
+      "Necesitas la frase de acceso para crear una sala.",
+    );
+  }
 }
