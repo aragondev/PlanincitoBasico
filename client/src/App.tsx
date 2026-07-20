@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { ConnectionStatus } from "./components/ConnectionStatus";
 import { Toast } from "./components/Feedback";
 import {
   navigateHome,
@@ -54,6 +55,19 @@ export function App() {
     );
   }
 
+  // Mientras recuperamos una sesión guardada no mostramos el formulario de
+  // entrada: al recargar aparecía un instante antes de restaurar la sala.
+  if (room.resuming) {
+    return (
+      <main className="join">
+        <div className="panel">
+          <h1 className="panel__title">Recuperando tu sala…</h1>
+          <ConnectionStatus status={room.status} />
+        </div>
+      </main>
+    );
+  }
+
   if (hashCode) {
     return (
       <>
@@ -66,7 +80,7 @@ export function App() {
               ? "La sala ya no existe. Puedes crear una nueva."
               : (room.error?.message ?? null)
           }
-          onJoin={(alias) => room.joinRoom(hashCode, alias)}
+          onJoin={(alias, asSpectator) => room.joinRoom(hashCode, alias, asSpectator)}
           onBack={() => {
             room.reset();
             navigateHome();

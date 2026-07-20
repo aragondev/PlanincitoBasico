@@ -14,7 +14,11 @@ import {
   createSocket,
   type AppSocket,
 } from "../socket/client";
-import { persistAccessSecret, stageAccessSecret } from "../socket/accessSecret";
+import {
+  clearAccessSecret,
+  persistAccessSecret,
+  stageAccessSecret,
+} from "../socket/accessSecret";
 import { clearSession, loadSession, saveSession } from "../socket/session";
 
 export type ConnectionStatus =
@@ -42,6 +46,7 @@ export type RoomApi = {
   error: RoomError | null;
   notice: string | null;
   accessRejected: boolean;
+  resuming: boolean;
   myId: string | null;
   isFacilitator: boolean;
   myVote: CardValue | undefined;
@@ -74,6 +79,11 @@ export function useRoom(): RoomApi {
   /** `true` cuando el servidor rechazó la frase que acabamos de enviar. */
   const [accessRejected, setAccessRejected] = useState(false);
   const triedSecretRef = useRef(false);
+  /**
+   * Hay una sesión guardada que aún estamos recuperando. Evita que al
+   * recargar aparezca un instante la pantalla de "entrar a la sala".
+   */
+  const [resuming, setResuming] = useState(() => loadSession() !== null);
 
   if (socketRef.current === null) socketRef.current = createSocket();
   const socket = socketRef.current;
@@ -132,6 +142,9 @@ export function useRoom(): RoomApi {
         socket.disconnect();
         // Sólo es "frase incorrecta" si veníamos de enviar una; la primera
         // vez simplemente aún no la habíamos pedido.
+        // Una frase inválida no debe quedar guardada de sesiones anteriores.
+        clearAccessSecret();
+        setResuming(false);
         if (triedSecretRef.current) setAccessRejected(true);
         setStatus(cause.message === UNAUTHORIZED ? "unauthorized" : "locked");
         return;
@@ -144,6 +157,7 @@ export function useRoom(): RoomApi {
       credentials?: SessionCredentials;
       state: PublicRoomState;
     }) => {
+      setResuming(false);
       setState(payload.state);
       setStatus("connected");
       if (payload.credentials) {
@@ -156,6 +170,7 @@ export function useRoom(): RoomApi {
     const onState = (payload: { state: PublicRoomState }) => setState(payload.state);
 
     const onError = (payload: RoomError) => {
+      setResuming(false);
       setError(payload);
       if (
         payload.code === "ROOM_NOT_FOUND" ||
@@ -272,6 +287,7 @@ export function useRoom(): RoomApi {
   const reset = useCallback(() => {
     clearSession();
     setAccessRejected(false);
+    setResuming(false);
     intentRef.current = null;
     setState(null);
     setCredentials(null);
@@ -289,6 +305,7 @@ export function useRoom(): RoomApi {
       error,
       notice,
       accessRejected,
+      resuming,
       myId,
       isFacilitator,
       myVote: effectiveVote,
@@ -317,7 +334,8 @@ export function useRoom(): RoomApi {
       reset,
     }),
     [
-      status, state, credentials, error, notice, accessRejected, myId, isFacilitator,
+      status, state, credentials, error, notice, accessRejected, resuming,
+      myId, isFacilitator,
       effectiveVote, start, emit, submitAccessSecret, reset,
     ],
   );
