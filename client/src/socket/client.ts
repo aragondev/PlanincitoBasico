@@ -1,6 +1,6 @@
 import { io, type Socket } from "socket.io-client";
 import type { ClientToServerEvents, ServerToClientEvents } from "@planincito/shared";
-import { loadAccessSecret } from "./accessSecret";
+import { getAccessSecret } from "./accessSecret";
 
 /** Motivos que el servidor devuelve en `connect_error` (ver `accessGate.ts`). */
 export const UNAUTHORIZED = "UNAUTHORIZED";
@@ -19,7 +19,7 @@ export function createSocket(): AppSocket {
   return io(SOCKET_URL, {
     // Función, no objeto: se vuelve a leer en cada intento, así una frase
     // corregida se aplica sin recrear el socket.
-    auth: (cb) => cb({ secret: loadAccessSecret() }),
+    auth: (cb) => cb({ secret: getAccessSecret() }),
     transports: ["websocket", "polling"],
     autoConnect: false,
     reconnection: true,

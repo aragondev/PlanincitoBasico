@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { loadAccessSecret } from "../socket/accessSecret";
+import { getAccessSecret } from "../socket/accessSecret";
 
 type Props = {
   /** `true` cuando el servidor bloqueó la IP por demasiados intentos. */
   locked: boolean;
+  /** `true` cuando la frase enviada fue rechazada. */
+  rejected: boolean;
+  busy: boolean;
   onSubmit: (secret: string) => void;
 };
 
-export function AccessGatePage({ locked, onSubmit }: Props) {
-  const [secret, setSecret] = useState(() => loadAccessSecret());
+export function AccessGatePage({ locked, rejected, busy, onSubmit }: Props) {
+  const [secret, setSecret] = useState(() => getAccessSecret());
   const trimmed = secret.trim();
 
   return (
@@ -33,6 +36,7 @@ export function AccessGatePage({ locked, onSubmit }: Props) {
           value={secret}
           autoComplete="current-password"
           autoFocus
+          disabled={locked}
           onChange={(event) => setSecret(event.target.value)}
         />
 
@@ -42,9 +46,16 @@ export function AccessGatePage({ locked, onSubmit }: Props) {
             antes de volver a probar.
           </p>
         ) : (
-          <button type="submit" className="primary" disabled={!trimmed}>
-            Entrar
-          </button>
+          <>
+            {rejected && (
+              <p className="error">
+                La frase no es correcta. Revísala y vuelve a intentarlo.
+              </p>
+            )}
+            <button type="submit" className="primary" disabled={!trimmed || busy}>
+              {busy ? "Comprobando…" : "Entrar"}
+            </button>
+          </>
         )}
       </form>
     </main>

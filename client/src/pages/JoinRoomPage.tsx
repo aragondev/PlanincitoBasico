@@ -8,7 +8,7 @@ type Props = {
   status: Status;
   busy: boolean;
   errorMessage: string | null;
-  onJoin: (alias: string, asSpectator: boolean) => void;
+  onJoin: (alias: string) => void;
   onBack: () => void;
 };
 
@@ -21,7 +21,6 @@ export function JoinRoomPage({
   onBack,
 }: Props) {
   const [alias, setAlias] = useState("");
-  const [asSpectator, setAsSpectator] = useState(false);
   const trimmed = alias.trim();
 
   return (
@@ -30,7 +29,7 @@ export function JoinRoomPage({
         className="panel"
         onSubmit={(event) => {
           event.preventDefault();
-          onJoin(trimmed, asSpectator);
+          onJoin(trimmed);
         }}
       >
         <h1 className="panel__title">
@@ -48,15 +47,6 @@ export function JoinRoomPage({
           placeholder="Ana"
           onChange={(event) => setAlias(event.target.value)}
         />
-
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={asSpectator}
-            onChange={(event) => setAsSpectator(event.target.checked)}
-          />
-          Entrar como espectador (no vota)
-        </label>
 
         <button type="submit" className="primary" disabled={!trimmed || busy}>
           Entrar

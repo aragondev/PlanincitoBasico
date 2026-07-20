@@ -36,6 +36,8 @@ export function App() {
       <>
         <AccessGatePage
           locked={room.status === "locked"}
+          rejected={room.accessRejected}
+          busy={busy}
           onSubmit={room.submitAccessSecret}
         />
         {feedback}
@@ -64,7 +66,7 @@ export function App() {
               ? "La sala ya no existe. Puedes crear una nueva."
               : (room.error?.message ?? null)
           }
-          onJoin={(alias, asSpectator) => room.joinRoom(hashCode, alias, asSpectator)}
+          onJoin={(alias) => room.joinRoom(hashCode, alias)}
           onBack={() => {
             room.reset();
             navigateHome();
