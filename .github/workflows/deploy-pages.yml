@@ -12,7 +12,9 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # No cancelamos una publicación en curso: al abortarla queda una deployment
+  # pendiente en el servidor que hace fallar a la siguiente.
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -30,11 +32,9 @@ jobs:
           VITE_SOCKET_URL: ${{ vars.VITE_SOCKET_URL }}
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
         run: npm run build:client
+      # Pages ya quedó habilitado; volver a pedir `enablement` en cada
+      # ejecución reconfigura el sitio sin necesidad.
       - uses: actions/configure-pages@v5
-        # Habilita Pages desde el propio workflow: evita depender de activarlo
-        # a mano en Settings, paso que suele no persistir en la interfaz.
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: client/dist
