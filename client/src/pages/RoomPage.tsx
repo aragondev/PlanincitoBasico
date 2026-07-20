@@ -1,6 +1,5 @@
 import { CardDeck } from "../components/CardDeck";
 import { ConfirmationDialog, useConfirmation } from "../components/Feedback";
-import { FacilitatorControls } from "../components/FacilitatorControls";
 import { ParticipantList } from "../components/ParticipantList";
 import { PokerTable } from "../components/PokerTable";
 import { RoomHeader } from "../components/RoomHeader";
@@ -41,39 +40,39 @@ export function RoomPage({ room }: { room: RoomApi }) {
         onChange={room.setTopic}
       />
 
-      <div className="room__body">
-        <ParticipantList
-          participants={state.participants}
-          myId={myId}
-          maxParticipants={state.maxParticipants}
-          revealed={revealed}
-          canManage={isFacilitator}
-          onKick={kickTarget.ask}
-          onChangeRole={room.changeRole}
-          onTransfer={room.transferFacilitator}
-        />
-
-        <div className="room__center">
-          {revealed && state.results ? (
-            <VotingResults results={state.results} />
-          ) : (
-            <PokerTable state={state} />
-          )}
-        </div>
-      </div>
-
-      <CardDeck
-        selected={room.myVote}
-        disabled={isSpectator || revealed}
-        hint={deckHint}
-        onSelect={room.vote}
-      />
-
-      {isFacilitator && (
-        <FacilitatorControls
+      <main className="room__stage">
+        <PokerTable
           state={state}
+          myId={myId}
+          isFacilitator={isFacilitator}
           onReveal={room.reveal}
           onRestart={() => room.restartRound()}
+        />
+
+        {revealed && state.results && <VotingResults results={state.results} />}
+
+        {/* La gestión de participantes sólo le sirve al facilitador: los demás
+            ya ven a todos en la mesa. */}
+        {isFacilitator && (
+          <ParticipantList
+            participants={state.participants}
+            myId={myId}
+            maxParticipants={state.maxParticipants}
+            revealed={revealed}
+            canManage
+            onKick={kickTarget.ask}
+            onChangeRole={room.changeRole}
+            onTransfer={room.transferFacilitator}
+          />
+        )}
+      </main>
+
+      {!isSpectator && (
+        <CardDeck
+          selected={room.myVote}
+          disabled={revealed}
+          hint={deckHint}
+          onSelect={room.vote}
         />
       )}
 
