@@ -72,6 +72,7 @@ pruebas de integración con clientes Socket.IO reales.
 | `MAX_ACTIVE_ROOMS`                  | `25`        | Salas simultáneas permitidas.                   |
 | `MAX_PARTICIPANTS_PER_ROOM`         | `8`         | Personas por sala.                              |
 | `EMPTY_ROOM_GRACE_MS`               | `60000`     | Margen antes de eliminar una sala vacía.        |
+| `MAX_ROUND_HISTORY`                 | `50`        | Rondas guardadas por sala en el historial.      |
 | `DISCONNECTED_PARTICIPANT_GRACE_MS` | `60000`     | Margen de reconexión de un participante.        |
 | `MAX_EVENT_PAYLOAD_BYTES`           | `4096`      | Tamaño máximo por evento.                       |
 | `RATE_LIMIT_MAX_EVENTS`             | `60`        | Eventos por socket dentro de la ventana.        |
@@ -151,6 +152,19 @@ hay restricción.
 quien la reciba puede pasarla a otro, y revocarla a una sola persona obliga a
 cambiarla para todos. Suficiente para que nadie de fuera use tu instancia;
 insuficiente si necesitas saber quién creó cada sala.
+
+## Historial de rondas
+
+Cada ronda revelada queda registrada con su tema, sus estadísticas y la carta de
+cada participante. Lo ven todos, no sólo el facilitador, y el alias se conserva
+aunque esa persona se haya ido de la sala.
+
+**Dura lo que dura la sala.** Vive en el mismo `Map` en memoria: si la sala se
+cierra por quedar vacía, o si Render reinicia el servicio, el historial se pierde
+con ella. No hay persistencia, en línea con el alcance del proyecto.
+
+Se guardan como máximo `MAX_ROUND_HISTORY` rondas (50 por defecto); al superarlo
+se descartan las más antiguas para que la memoria no crezca sin límite.
 
 ## Limitaciones conocidas
 

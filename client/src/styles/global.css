@@ -633,6 +633,95 @@ button.danger {
   font-size: 0.85rem;
 }
 
+/* ---------- Historial ---------- */
+
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.history__item {
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.history__summary {
+  inline-size: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: start;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.6rem 0.75rem;
+}
+
+.history__round {
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.history__topic {
+  font-size: 0.85rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history__figures {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.history__chevron {
+  color: var(--muted);
+}
+
+.history__detail {
+  padding: 0 0.75rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.history__detail p {
+  margin: 0;
+}
+
+.history__votes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.history__votes li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.history__card {
+  font-weight: 700;
+  color: var(--accent);
+}
+
 /* ---------- Avisos y diálogos ---------- */
 
 .toast {

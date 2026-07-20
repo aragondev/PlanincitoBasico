@@ -30,6 +30,8 @@ export const config = {
   maxActiveRooms: num("MAX_ACTIVE_ROOMS", 25),
   maxParticipantsPerRoom: num("MAX_PARTICIPANTS_PER_ROOM", 8),
   emptyRoomGraceMs: num("EMPTY_ROOM_GRACE_MS", 60_000),
+  /** Rondas conservadas por sala; el historial vive sólo mientras la sala. */
+  maxRoundHistory: num("MAX_ROUND_HISTORY", 50),
   disconnectedParticipantGraceMs: num(
     "DISCONNECTED_PARTICIPANT_GRACE_MS",
     60_000,
