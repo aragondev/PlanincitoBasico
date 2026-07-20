@@ -14,7 +14,7 @@ import {
   createSocket,
   type AppSocket,
 } from "../socket/client";
-import { saveAccessSecret } from "../socket/accessSecret";
+import { persistAccessSecret, stageAccessSecret } from "../socket/accessSecret";
 import { clearSession, loadSession, saveSession } from "../socket/session";
 
 export type ConnectionStatus =
@@ -41,6 +41,7 @@ export type RoomApi = {
   credentials: SessionCredentials | null;
   error: RoomError | null;
   notice: string | null;
+  accessRejected: boolean;
   myId: string | null;
   isFacilitator: boolean;
   myVote: CardValue | undefined;
@@ -70,6 +71,9 @@ export function useRoom(): RoomApi {
   const [error, setError] = useState<RoomError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [myVote, setMyVote] = useState<CardValue | undefined>(undefined);
+  /** `true` cuando el servidor rechazó la frase que acabamos de enviar. */
+  const [accessRejected, setAccessRejected] = useState(false);
+  const triedSecretRef = useRef(false);
 
   if (socketRef.current === null) socketRef.current = createSocket();
   const socket = socketRef.current;
@@ -106,6 +110,10 @@ export function useRoom(): RoomApi {
 
     const onConnect = () => {
       if (coldStartTimer.current) clearTimeout(coldStartTimer.current);
+      // El servidor aceptó el handshake: recién ahora la frase es válida.
+      persistAccessSecret();
+      setAccessRejected(false);
+      triedSecretRef.current = false;
       setStatus("connected");
       setNotice(null);
       dispatchIntent();
@@ -122,6 +130,9 @@ export function useRoom(): RoomApi {
       if (cause.message === UNAUTHORIZED || cause.message === TOO_MANY_ATTEMPTS) {
         if (coldStartTimer.current) clearTimeout(coldStartTimer.current);
         socket.disconnect();
+        // Sólo es "frase incorrecta" si veníamos de enviar una; la primera
+        // vez simplemente aún no la habíamos pedido.
+        if (triedSecretRef.current) setAccessRejected(true);
         setStatus(cause.message === UNAUTHORIZED ? "unauthorized" : "locked");
         return;
       }
@@ -240,7 +251,9 @@ export function useRoom(): RoomApi {
   /** Guarda la frase compartida y reintenta la acción que quedó pendiente. */
   const submitAccessSecret = useCallback(
     (secret: string) => {
-      saveAccessSecret(secret);
+      stageAccessSecret(secret);
+      triedSecretRef.current = true;
+      setAccessRejected(false);
       setError(null);
       setStatus("connecting");
       armColdStartTimer();
@@ -258,6 +271,7 @@ export function useRoom(): RoomApi {
 
   const reset = useCallback(() => {
     clearSession();
+    setAccessRejected(false);
     intentRef.current = null;
     setState(null);
     setCredentials(null);
@@ -274,6 +288,7 @@ export function useRoom(): RoomApi {
       credentials,
       error,
       notice,
+      accessRejected,
       myId,
       isFacilitator,
       myVote: effectiveVote,
@@ -302,7 +317,7 @@ export function useRoom(): RoomApi {
       reset,
     }),
     [
-      status, state, credentials, error, notice, myId, isFacilitator,
+      status, state, credentials, error, notice, accessRejected, myId, isFacilitator,
       effectiveVote, start, emit, submitAccessSecret, reset,
     ],
   );
