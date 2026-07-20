@@ -1,5 +1,5 @@
 import { CARD_VALUES, type CardValue } from "@planincito/shared";
-import { PokerCard } from "./PokerCard";
+import { cardAriaLabel, cardLabel } from "./PokerCard";
 
 type Props = {
   selected: CardValue | undefined;
@@ -8,21 +8,26 @@ type Props = {
   onSelect: (value: CardValue) => void;
 };
 
+/** Mazo fijo al pie de la pantalla; se desplaza en horizontal si no cabe. */
 export function CardDeck({ selected, disabled, hint, onSelect }: Props) {
   return (
     <section className="deck" aria-label="Mazo de cartas">
+      {hint && <p className="deck__hint">{hint}</p>}
       <div className="deck__cards">
         {CARD_VALUES.map((value) => (
-          <PokerCard
+          <button
             key={value}
-            value={value}
-            selected={selected === value}
+            type="button"
+            className={`deck__card${selected === value ? " deck__card--selected" : ""}`}
+            aria-pressed={selected === value}
+            aria-label={cardAriaLabel(value)}
             disabled={disabled}
-            onSelect={onSelect}
-          />
+            onClick={() => onSelect(value)}
+          >
+            {cardLabel(value)}
+          </button>
         ))}
       </div>
-      {hint && <p className="deck__hint">{hint}</p>}
     </section>
   );
 }

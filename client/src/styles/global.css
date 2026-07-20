@@ -289,11 +289,6 @@ button.danger {
   gap: 0.5rem;
 }
 
-.room__body {
-  display: grid;
-  gap: var(--gap);
-}
-
 /* ---------- Participantes ---------- */
 
 .participants {
@@ -368,128 +363,207 @@ button.danger {
 
 /* ---------- Mesa ---------- */
 
-.table {
+.room__stage {
   display: flex;
   flex-direction: column;
   gap: var(--gap);
+  /* Deja aire para que el mazo fijo no tape el contenido. */
+  padding-block-end: 11rem;
 }
 
-.table__surface {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 1.25rem;
-  text-align: center;
+.table {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding-block: 1.5rem;
 }
 
-.table__summary {
-  margin: 0;
-  color: var(--muted);
-}
-
-.table__seats {
+.table__row {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 1.25rem;
+  min-block-size: 1px;
 }
+
+.table__surface {
+  inline-size: min(420px, 100%);
+  min-block-size: 130px;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 24px rgb(79 140 255 / 25%);
+}
+
+.table__status {
+  margin: 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+.table__surface .primary {
+  padding-inline: 1.5rem;
+}
+
+/* ---------- Asientos ---------- */
 
 .seat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.3rem;
-  inline-size: 68px;
+  gap: 0.5rem;
+  inline-size: 64px;
 }
 
 .seat--offline {
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
 .seat__card {
-  inline-size: 46px;
+  position: relative;
+  inline-size: 44px;
   block-size: 66px;
-  border-radius: 8px;
-  border: 1px dashed var(--border);
+  /* El volteo necesita profundidad real, no un cambio de opacidad. */
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+
+.seat__card--flipped {
+  transform: rotateY(180deg);
+}
+
+.seat__face {
+  position: absolute;
+  inset: 0;
   display: grid;
   place-items: center;
-  font-size: 1.2rem;
+  border-radius: 8px;
+  backface-visibility: hidden;
+  font-size: 1.15rem;
   font-weight: 700;
 }
 
-.seat__card--filled {
-  border-style: solid;
-  background: var(--accent-strong);
+.seat__face--back {
+  border: 1px dashed var(--border);
+  background: transparent;
 }
 
-.seat__card--revealed {
+/* Reverso con textura sólo cuando ya hay voto: así se ve quién votó. */
+.seat__card--voted .seat__face--back {
+  border: 1px solid var(--accent);
+  background-color: #6aa6ff;
+  background-image: repeating-linear-gradient(
+      45deg,
+      rgb(255 255 255 / 35%) 0 4px,
+      transparent 4px 8px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgb(255 255 255 / 35%) 0 4px,
+      transparent 4px 8px
+    );
+}
+
+.seat__face--front {
+  transform: rotateY(180deg);
   background: var(--surface-2);
-  border-color: var(--accent);
+  border: 1px solid var(--accent);
+  color: var(--text);
+}
+
+.seat__card--spectator {
+  inline-size: 44px;
+  block-size: 66px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--muted);
+  border-radius: 8px;
+  font-size: 1.1rem;
 }
 
 .seat__alias {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   color: var(--muted);
   text-align: center;
   overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
+.seat__alias--me {
+  color: var(--text);
+  font-weight: 600;
 }
 
 /* ---------- Mazo ---------- */
 
 .deck {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-}
-
-.deck__cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.card {
-  inline-size: 56px;
-  block-size: 80px;
-  display: grid;
-  place-items: center;
-  font-size: 1.15rem;
-  font-weight: 700;
-  background: var(--surface);
-  transition: transform 0.12s ease;
-}
-
-.card:not(:disabled):hover {
-  transform: translateY(-4px);
-}
-
-.card--selected {
-  background: var(--accent);
-  border-color: var(--accent-strong);
-  color: #08111f;
-}
-
-.card--static {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  gap: 0.4rem;
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  /* Fondo opaco: con degradado, el panel de resultados se transparentaba
+     por detrás del mazo. */
+  background: var(--bg);
+  border-block-start: 1px solid var(--border);
 }
 
 .deck__hint {
   margin: 0;
+  text-align: center;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
-.controls {
+.deck__cards {
   display: flex;
   gap: 0.5rem;
+  justify-content: flex-start;
+  /* En móvil el mazo se desliza en horizontal en vez de partirse en filas. */
+  overflow-x: auto;
+  padding-block: 0.5rem;
+  scrollbar-width: none;
 }
 
-.controls button {
-  flex: 1;
+.deck__cards::-webkit-scrollbar {
+  display: none;
+}
+
+.deck__card {
+  flex: 0 0 auto;
+  inline-size: 52px;
+  block-size: 76px;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: transparent;
+  border: 2px solid var(--accent);
+  border-radius: 10px;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.deck__card:not(:disabled):hover {
+  transform: translateY(-6px);
+}
+
+.deck__card--selected {
+  background: var(--accent);
+  color: #08111f;
+  transform: translateY(-10px);
 }
 
 /* ---------- Resultados ---------- */
@@ -631,13 +705,16 @@ button.danger {
     justify-content: space-between;
   }
 
-  /* En escritorio la mesa ocupa el centro y los participantes la columna lateral. */
-  .room__body {
-    grid-template-columns: minmax(240px, 320px) 1fr;
-    align-items: start;
+  .deck__cards {
+    justify-content: center;
   }
 
-  .room__center {
-    order: 2;
+  .deck__card {
+    inline-size: 58px;
+    block-size: 86px;
+  }
+
+  .table__row {
+    gap: 1.75rem;
   }
 }
