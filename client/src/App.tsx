@@ -31,7 +31,20 @@ export function App() {
     />
   );
 
-  // La puerta de acceso tiene prioridad: sin frase válida no hay socket.
+  // Recuperando una sesión guardada: no mostramos el formulario de entrada,
+  // que al recargar aparecía un instante antes de restaurar la sala.
+  if (room.booting) {
+    return (
+      <main className="join">
+        <div className="panel">
+          <h1 className="panel__title">Recuperando tu sala…</h1>
+          <ConnectionStatus status={room.status} />
+        </div>
+      </main>
+    );
+  }
+
+  // La frase se pide sólo al crear una sala, no al entrar a una existente.
   if (room.status === "unauthorized" || room.status === "locked") {
     return (
       <>
@@ -52,19 +65,6 @@ export function App() {
         <RoomPage room={room} />
         {feedback}
       </>
-    );
-  }
-
-  // Mientras recuperamos una sesión guardada no mostramos el formulario de
-  // entrada: al recargar aparecía un instante antes de restaurar la sala.
-  if (room.resuming) {
-    return (
-      <main className="join">
-        <div className="panel">
-          <h1 className="panel__title">Recuperando tu sala…</h1>
-          <ConnectionStatus status={room.status} />
-        </div>
-      </main>
     );
   }
 

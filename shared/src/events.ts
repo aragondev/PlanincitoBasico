@@ -47,7 +47,11 @@ export const SERVER_EVENTS = {
 } as const;
 
 export type ClientToServerEvents = {
-  [CLIENT_EVENTS.ROOM_CREATE]: (payload: { alias: string }) => void;
+  /** `secret` sólo hace falta si la instancia exige frase para crear salas. */
+  [CLIENT_EVENTS.ROOM_CREATE]: (payload: {
+    alias: string;
+    secret?: string;
+  }) => void;
   [CLIENT_EVENTS.ROOM_JOIN]: (payload: {
     code: string;
     alias: string;
