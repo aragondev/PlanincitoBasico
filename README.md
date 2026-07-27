@@ -1,6 +1,6 @@
 # Planincito
 
-Planning Poker temporal
+Planning Poker
 
 ## Arquitectura
 
