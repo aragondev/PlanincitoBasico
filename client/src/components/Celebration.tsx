@@ -130,12 +130,6 @@ export function Celebration({ onDone }: { onDone: () => void }) {
     };
   }, []);
 
-  return (
-    <>
-      <canvas ref={canvasRef} className="celebration" aria-hidden="true" />
-      <p className="celebration__banner" role="status">
-        ¡Consenso! 🎉
-      </p>
-    </>
-  );
+  // Sólo los cohetes: el texto lo muestra la mesa, donde no solapa nada.
+  return <canvas ref={canvasRef} className="celebration" aria-hidden="true" />;
 }

@@ -71,12 +71,12 @@ export function RoundHistory({ history }: { history: RoundHistoryEntry[] }) {
     <>
       <button
         type="button"
-        className="md-button md-button--text history__toggle"
+        className="md-button--text drawer__toggle"
         aria-expanded={open}
         onClick={() => setOpen(true)}
       >
         Historial
-        <span className="history__badge">{history.length}</span>
+        <span className="drawer__badge">{history.length}</span>
       </button>
 
       {open && (

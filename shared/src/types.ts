@@ -114,7 +114,13 @@ export function hasConsensus(results: RoundResults | null): boolean {
 }
 
 /** Objetos que se pueden lanzar a quien todavía no ha votado. */
-export const THROWABLES = ["plane", "paper", "tomato", "rock"] as const;
+export const THROWABLES = [
+  "plane",
+  "arrow",
+  "paper",
+  "tomato",
+  "rock",
+] as const;
 
 export type Throwable = (typeof THROWABLES)[number];
 
