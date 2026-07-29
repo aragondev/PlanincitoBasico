@@ -103,7 +103,12 @@ export function registerSocketHandlers(
     void socket.join(room.code);
 
     const state = store.buildPublicState(room);
-    socket.emit(event, { credentials: credentialsFor(room, participant), state });
+    // La carta propia viaja sólo a su dueño, para que la recupere al volver.
+    socket.emit(event, {
+      credentials: credentialsFor(room, participant),
+      state,
+      yourVote: room.votes.get(participant.id),
+    });
     socket.to(room.code).emit(SERVER_EVENTS.PARTICIPANT_JOINED, {
       participant:
         state.participants.find((p) => p.participantId === participant.id) ??
@@ -192,6 +197,19 @@ export function registerSocketHandlers(
         const participantId = parseId(payload?.participantId);
         const token = parseId(payload?.reconnectionToken);
         const { room, participant } = store.reconnect(code, participantId, token);
+
+        // Si otra pestaña tenía este mismo asiento, se le retira: dos sockets
+        // con la misma identidad dejarían un duplicado imposible de resolver.
+        for (const other of io.sockets.sockets.values()) {
+          if (other.id !== socket.id && other.data.participantId === participant.id) {
+            other.data = {};
+            other.leave(room.code);
+            other.emit(SERVER_EVENTS.ROOM_CLOSED, {
+              reason: "Abriste la sala en otra pestaña.",
+            });
+          }
+        }
+
         enterRoom(socket, room, participant, SERVER_EVENTS.ROOM_STATE);
       }),
     );
