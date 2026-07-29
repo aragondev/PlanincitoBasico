@@ -114,6 +114,16 @@ Cualquiera puede pasar a espectador y volver a jugar desde la barra inferior,
 sin pedir permiso a nadie. Pasar a espectador retira el voto de la ronda en
 curso. El facilitador, además, puede cambiar el rol de otras personas.
 
+## Lanzar objetos
+
+Mientras alguien no haya votado, su carta se puede pulsar (o basta pasar el
+ratón en escritorio) para lanzarle un avioncito, una bola de papel, un tomate,
+un aplauso o un café. El objeto vuela de un asiento a otro y lo ven todos.
+
+Es un gesto puramente visual: no toca el estado de la sala ni queda registrado.
+El servidor sólo comprueba que la persona siga dentro, no sea espectador y no
+haya votado todavía.
+
 ## Historial de rondas
 
 Cada ronda revelada queda registrada con su tema, sus estadísticas y la carta de
