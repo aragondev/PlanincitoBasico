@@ -26,6 +26,7 @@ export const CLIENT_EVENTS = {
   ROOM_LEAVE: "room:leave",
   TOPIC_UPDATE: "topic:update",
   VOTE_SUBMIT: "vote:submit",
+  VOTE_RETRACT: "vote:retract",
   VOTES_REVEAL: "votes:reveal",
   ROUND_RESTART: "round:restart",
   PARTICIPANT_KICK: "participant:kick",
@@ -65,6 +66,8 @@ export type ClientToServerEvents = {
   [CLIENT_EVENTS.ROOM_LEAVE]: () => void;
   [CLIENT_EVENTS.TOPIC_UPDATE]: (payload: { topic: string }) => void;
   [CLIENT_EVENTS.VOTE_SUBMIT]: (payload: { value: CardValue }) => void;
+  /** Retira la carta elegida mientras la ronda siga abierta. */
+  [CLIENT_EVENTS.VOTE_RETRACT]: () => void;
   [CLIENT_EVENTS.VOTES_REVEAL]: () => void;
   [CLIENT_EVENTS.ROUND_RESTART]: (payload: { topic?: string }) => void;
   [CLIENT_EVENTS.PARTICIPANT_KICK]: (payload: { participantId: string }) => void;

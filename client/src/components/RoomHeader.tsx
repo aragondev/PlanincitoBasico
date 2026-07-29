@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { inviteLinkFor } from "../hooks/useHashRoute";
 import { ConnectionStatus } from "./ConnectionStatus";
+import { RoundHistory } from "./RoundHistory";
 import { TopicEditor } from "./TopicEditor";
+import type { RoundHistoryEntry } from "@planincito/shared";
 import type { ConnectionStatus as Status } from "../hooks/useRoom";
 
 export function CopyInviteLink({ code }: { code: string }) {
@@ -39,6 +41,7 @@ type Props = {
   canEditTopic: boolean;
   onTopicChange: (topic: string) => void;
   onLeave: () => void;
+  history: RoundHistoryEntry[];
 };
 
 export function RoomHeader({
@@ -49,6 +52,7 @@ export function RoomHeader({
   canEditTopic,
   onTopicChange,
   onLeave,
+  history,
 }: Props) {
   return (
     <header className="room-header">
@@ -62,6 +66,7 @@ export function RoomHeader({
       </div>
       <div className="room-header__actions">
         <ConnectionStatus status={status} />
+        <RoundHistory history={history} />
         <CopyInviteLink code={code} />
         <button type="button" className="ghost" onClick={onLeave}>
           Salir

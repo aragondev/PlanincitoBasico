@@ -76,6 +76,26 @@ describe("votación", () => {
     expect(room.votes.get(participant.id)).toBe("8");
   });
 
+  it("retirar el voto deja la ronda sin esa carta", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana");
+    store.submitVote(room.code, participant.id, "5");
+    store.retractVote(room.code, participant.id);
+    expect(room.votes.has(participant.id)).toBe(false);
+    expect(store.buildPublicState(room).participants[0]!.hasVoted).toBe(false);
+  });
+
+  it("no se puede retirar el voto después de revelar", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana");
+    store.submitVote(room.code, participant.id, "5");
+    store.reveal(room.code, participant.id);
+    expect(() => store.retractVote(room.code, participant.id)).toThrowError(
+      /revelada/i,
+    );
+    expect(room.votes.get(participant.id)).toBe("5");
+  });
+
   it("no deja votar a un espectador", () => {
     const store = createStore();
     const { room } = store.createRoom("Ana");

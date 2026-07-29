@@ -117,8 +117,12 @@ curso. El facilitador, además, puede cambiar el rol de otras personas.
 ## Lanzar objetos
 
 Mientras alguien no haya votado, su carta se puede pulsar (o basta pasar el
-ratón en escritorio) para lanzarle un avioncito, una bola de papel, un tomate,
-un aplauso o un café. El objeto vuela de un asiento a otro y lo ven todos.
+ratón en escritorio) para lanzarle un avioncito de papel, una bola de papel,
+un tomate o una piedra.
+
+Los objetos entran en andanada desde ambos laterales y convergen en la carta
+del destinatario: los tomates se aplastan al impactar y el resto cae al suelo.
+Lo ven todos los de la sala.
 
 Es un gesto puramente visual: no toca el estado de la sala ni queda registrado.
 El servidor sólo comprueba que la persona siga dentro, no sea espectador y no
@@ -127,8 +131,10 @@ haya votado todavía.
 ## Historial de rondas
 
 Cada ronda revelada queda registrada con su tema, sus estadísticas y la carta de
-cada participante. Lo ven todos, no sólo el facilitador, y el alias se conserva
-aunque esa persona se haya ido de la sala.
+cada participante. Se consulta desde el botón *Historial* del encabezado, que
+abre un panel lateral: así no ocupa sitio en la sala ni obliga a desplazarse
+perdiendo de vista la mesa. Lo ven todos, no sólo el facilitador, y el alias se
+conserva aunque esa persona se haya ido.
 
 **Dura lo que dura la sala.** Vive en el mismo `Map` en memoria: si la sala se
 cierra por quedar vacía, o si Render reinicia el servicio, el historial se pierde

@@ -51,6 +51,7 @@ export type RoomApi = {
   createRoom: (alias: string, asSpectator?: boolean) => void;
   joinRoom: (code: string, alias: string, asSpectator?: boolean) => void;
   leaveRoom: () => void;
+  /** Elegir la misma carta la retira: alternar es el gesto esperado. */
   vote: (value: CardValue) => void;
   reveal: () => void;
   restartRound: (topic?: string) => void;
@@ -350,6 +351,11 @@ export function useRoom(): RoomApi {
         reset();
       },
       vote: (value) => {
+        if (effectiveVote === value) {
+          setMyVote(undefined);
+          emit(CLIENT_EVENTS.VOTE_RETRACT);
+          return;
+        }
         setMyVote(value);
         emit(CLIENT_EVENTS.VOTE_SUBMIT, { value });
       },

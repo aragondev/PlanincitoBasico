@@ -234,6 +234,24 @@ export function registerSocketHandlers(
     );
 
     socket.on(
+      CLIENT_EVENTS.VOTE_RETRACT,
+      guard(socket, () => {
+        const { code, participantId } = context(socket);
+        const room = store.retractVote(code, participantId);
+        const state = store.buildPublicState(room);
+        const participant = state.participants.find(
+          (p) => p.participantId === participantId,
+        );
+        if (participant) {
+          io.to(room.code).emit(SERVER_EVENTS.PARTICIPANT_UPDATED, {
+            participant,
+            state,
+          });
+        }
+      }),
+    );
+
+    socket.on(
       CLIENT_EVENTS.VOTES_REVEAL,
       guard(socket, () => {
         const { code, participantId } = context(socket);

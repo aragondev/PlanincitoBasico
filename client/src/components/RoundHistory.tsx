@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { RoundHistoryEntry } from "@planincito/shared";
 import { cardLabel } from "./PokerCard";
 
@@ -14,22 +14,16 @@ function Entry({ entry }: { entry: RoundHistoryEntry }) {
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        <span className="history__round">Ronda {entry.round}</span>
+        <span className="history__round">#{entry.round}</span>
         <span className="history__topic">
           {entry.topic || <span className="muted">Sin tema</span>}
         </span>
         <span className="history__figures">
           {results.average !== null ? (
-            <>
-              <strong>{results.average}</strong>
-              <span className="muted"> prom.</span>
-            </>
+            <strong>{results.average}</strong>
           ) : (
-            <span className="muted">sin números</span>
+            <span className="muted">—</span>
           )}
-        </span>
-        <span className="history__chevron" aria-hidden="true">
-          {open ? "▾" : "▸"}
         </span>
       </button>
 
@@ -55,26 +49,73 @@ function Entry({ entry }: { entry: RoundHistoryEntry }) {
   );
 }
 
-/** Rondas ya reveladas. Vive con la sala: al cerrarse, desaparece. */
+/**
+ * Historial en panel lateral: no ocupa sitio en la sala ni obliga a
+ * desplazarse perdiendo de vista la mesa. Vive con la sala y muere con ella.
+ */
 export function RoundHistory({ history }: { history: RoundHistoryEntry[] }) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   if (history.length === 0) return null;
 
   return (
-    <section className="panel" aria-label="Historial de rondas">
-      <h2 className="panel__title">
+    <>
+      <button
+        type="button"
+        className="md-button md-button--text history__toggle"
+        aria-expanded={open}
+        onClick={() => setOpen(true)}
+      >
         Historial
-        <span className="panel__count">
-          {history.length} {history.length === 1 ? "ronda" : "rondas"}
-        </span>
-      </h2>
-      <p className="muted">
-        Sólo durante esta sesión: si la sala se cierra, el historial se pierde.
-      </p>
-      <ul className="history">
-        {history.map((entry) => (
-          <Entry key={entry.round} entry={entry} />
-        ))}
-      </ul>
-    </section>
+        <span className="history__badge">{history.length}</span>
+      </button>
+
+      {open && (
+        <div
+          className="drawer__scrim"
+          role="presentation"
+          onClick={() => setOpen(false)}
+        >
+          <aside
+            className="drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Historial de rondas"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="drawer__header">
+              <h2>Historial</h2>
+              <button
+                type="button"
+                className="md-icon-button"
+                aria-label="Cerrar historial"
+                onClick={() => setOpen(false)}
+              >
+                ✕
+              </button>
+            </header>
+
+            <p className="muted drawer__note">
+              Sólo durante esta sesión: si la sala se cierra, se pierde.
+            </p>
+
+            <ul className="history">
+              {history.map((entry) => (
+                <Entry key={entry.round} entry={entry} />
+              ))}
+            </ul>
+          </aside>
+        </div>
+      )}
+    </>
   );
 }
