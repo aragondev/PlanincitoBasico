@@ -388,6 +388,20 @@ button.danger {
   flex: 0 0 auto;
 }
 
+.home__secret {
+  margin-block-start: 0.75rem;
+  padding-inline: 0.25rem;
+  color: var(--muted-dim);
+  font-size: 0.78rem;
+}
+
+.home__secret button {
+  min-block-size: auto;
+  padding: 0 0.25rem;
+  font-size: 0.78rem;
+  text-decoration: underline;
+}
+
 .join {
   max-inline-size: 400px;
   margin: 3rem auto;
@@ -742,8 +756,20 @@ button.danger {
   inline-size: 64px;
 }
 
+/* Atenuación suave y con transición: antes el salto brusco parecía un fallo. */
 .seat--offline {
-  opacity: 0.45;
+  opacity: 0.62;
+}
+
+.seat {
+  transition: opacity 0.4s var(--ease);
+}
+
+/* Marca explícita, para que no haya que adivinar por qué está apagada. */
+.seat--offline .seat__alias::after {
+  content: " ⚡";
+  font-size: 0.7em;
+  opacity: 0.8;
 }
 
 .seat__card {

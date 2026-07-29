@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   PublicParticipant,
   PublicRoomState,
@@ -8,6 +8,33 @@ import type {
 import { cardLabel } from "./PokerCard";
 import { ThrowMenu } from "./ThrowMenu";
 import { ResultsSummary } from "./VotingResults";
+
+/** Margen antes de atenuar a alguien que se acaba de desconectar. */
+const OFFLINE_DELAY_MS = 6000;
+
+/**
+ * Un móvil que bloquea la pantalla corta el WebSocket y vuelve en segundos.
+ * Atenuar al instante hacía parpadear cartas de gente que seguía en la
+ * reunión, así que la marca de "desconectado" espera a que sea de verdad.
+ */
+function useSettledOffline(connected: boolean): boolean {
+  const [offline, setOffline] = useState(!connected);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (timer.current) clearTimeout(timer.current);
+    if (connected) {
+      setOffline(false);
+      return undefined;
+    }
+    timer.current = setTimeout(() => setOffline(true), OFFLINE_DELAY_MS);
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [connected]);
+
+  return offline;
+}
 
 /**
  * Asiento: carta boca abajo mientras se vota y volteo 3D al revelar.
@@ -26,6 +53,7 @@ function Seat({
 }) {
   const { alias, role, connected, hasVoted, vote, participantId } = participant;
   const [menuOpen, setMenuOpen] = useState(false);
+  const offline = useSettledOffline(connected);
   // En escritorio el menú se abre al pasar el ratón, así que el clic sólo
   // debe abrirlo donde no hay puntero fino; si no, hacía falta pulsar dos veces.
   const hoverCapable =
@@ -33,7 +61,7 @@ function Seat({
 
   if (role === "spectator") {
     return (
-      <li className={`seat${connected ? "" : " seat--offline"}`}>
+      <li className={`seat${offline ? " seat--offline" : ""}`}>
         <span
           className="seat__card seat__card--spectator"
           data-seat={participantId}
@@ -53,7 +81,8 @@ function Seat({
 
   return (
     <li
-      className={`seat${connected ? "" : " seat--offline"}`}
+      className={`seat${offline ? " seat--offline" : ""}`}
+      title={offline ? `${alias} perdió la conexión` : undefined}
       // El puntero lo abre; cerrarlo es cosa del clic fuera, no de apartar
       // el ratón: si no, elegir un objeto obligaba a un clic previo.
       onMouseEnter={() => hoverCapable && canThrow && setMenuOpen(true)}

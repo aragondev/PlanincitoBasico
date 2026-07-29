@@ -36,6 +36,15 @@ export function persistAccessSecret(): void {
   }
 }
 
+/** `true` si esta visita ya tiene una frase aceptada guardada. */
+export function hasStoredAccessSecret(): boolean {
+  try {
+    return Boolean(localStorage.getItem(KEY));
+  } catch {
+    return false;
+  }
+}
+
 export function clearAccessSecret(): void {
   staged = null;
   try {

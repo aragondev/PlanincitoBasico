@@ -68,6 +68,8 @@ export type RoomApi = {
   endFlight: (id: number) => void;
   dismissError: () => void;
   submitAccessSecret: (secret: string) => void;
+  /** Olvida la frase guardada, para volver a pedirla o cambiarla. */
+  forgetAccessSecret: () => void;
   reset: () => void;
 };
 
@@ -417,6 +419,10 @@ export function useRoom(): RoomApi {
         setFlights((current) => current.filter((flight) => flight.id !== id)),
       dismissError: () => setError(null),
       submitAccessSecret,
+      forgetAccessSecret: () => {
+        clearAccessSecret();
+        setAccessRejected(false);
+      },
       reset,
     }),
     [
