@@ -22,11 +22,11 @@ beforeEach(() => {
 });
 
 describe("creación y acceso", () => {
-  it("el creador recibe el rol de facilitador", () => {
+  it("el creador queda como facilitador y jugando", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
-    expect(participant.role).toBe("facilitator");
     expect(room.facilitatorId).toBe(participant.id);
+    expect(participant.role).toBe("player");
     expect(room.status).toBe("voting");
     expect(room.round).toBe(1);
   });
@@ -177,7 +177,8 @@ describe("facilitador y desconexiones", () => {
     store.sweep();
 
     expect(room.facilitatorId).toBe(bea.id);
-    expect(room.participants.get(bea.id)?.role).toBe("facilitator");
+    // El puesto no altera el rol: Bea sigue jugando como antes.
+    expect(room.participants.get(bea.id)?.role).toBe("player");
     expect(room.participants.has(ana.id)).toBe(false);
   });
 
@@ -194,13 +195,14 @@ describe("facilitador y desconexiones", () => {
     expect(room.facilitatorId).toBe(spectator.id);
   });
 
-  it("la transferencia manual degrada al facilitador anterior a jugador", () => {
+  it("la transferencia manual mueve el puesto sin tocar los roles", () => {
     const store = createStore();
     const { room, participant: ana } = store.createRoom("Ana");
-    const bea = store.joinRoom(room.code, "Bea").participant;
+    const bea = store.joinRoom(room.code, "Bea", true).participant;
     store.transferFacilitator(room.code, ana.id, bea.id);
     expect(room.facilitatorId).toBe(bea.id);
     expect(room.participants.get(ana.id)?.role).toBe("player");
+    expect(room.participants.get(bea.id)?.role).toBe("spectator");
   });
 
   it("una reconexión dentro del margen recupera lugar, rol y voto", () => {
@@ -248,6 +250,122 @@ describe("facilitador y desconexiones", () => {
     store.kick(room.code, participant.id, bea.id);
     expect(room.participants.has(bea.id)).toBe(false);
     expect(room.votes.has(bea.id)).toBe(false);
+  });
+});
+
+describe("modo espectador", () => {
+  it("quien crea la sala puede hacerlo como espectador y seguir dirigiendo", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana", true);
+    expect(participant.role).toBe("spectator");
+    expect(room.facilitatorId).toBe(participant.id);
+    // Espectador no vota, pero sí revela.
+    expect(() => store.submitVote(room.code, participant.id, "5")).toThrowError(
+      /espectadores/i,
+    );
+    expect(() => store.reveal(room.code, participant.id)).not.toThrow();
+  });
+
+  it("cualquiera cambia su propio rol sin ser facilitador", () => {
+    const store = createStore();
+    const { room } = store.createRoom("Ana");
+    const bea = store.joinRoom(room.code, "Bea").participant;
+
+    store.changeRole(room.code, bea.id, bea.id, "spectator");
+    expect(room.participants.get(bea.id)?.role).toBe("spectator");
+
+    store.changeRole(room.code, bea.id, bea.id, "player");
+    expect(room.participants.get(bea.id)?.role).toBe("player");
+  });
+
+  it("el facilitador puede pasar a espectador sin perder el puesto", () => {
+    const store = createStore();
+    const { room, participant: ana } = store.createRoom("Ana");
+    store.joinRoom(room.code, "Bea");
+
+    store.changeRole(room.code, ana.id, ana.id, "spectator");
+    expect(room.participants.get(ana.id)?.role).toBe("spectator");
+    expect(room.facilitatorId).toBe(ana.id);
+  });
+
+  it("pasar a espectador retira el voto de la ronda en curso", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana");
+    store.submitVote(room.code, participant.id, "8");
+    store.changeRole(room.code, participant.id, participant.id, "spectator");
+    expect(room.votes.has(participant.id)).toBe(false);
+  });
+
+  it("nadie puede cambiar el rol de otro salvo el facilitador", () => {
+    const store = createStore();
+    const { room, participant: ana } = store.createRoom("Ana");
+    const bea = store.joinRoom(room.code, "Bea").participant;
+    const caro = store.joinRoom(room.code, "Caro").participant;
+
+    expect(() =>
+      store.changeRole(room.code, bea.id, caro.id, "spectator"),
+    ).toThrowError(/facilitador/i);
+
+    store.changeRole(room.code, ana.id, caro.id, "spectator");
+    expect(room.participants.get(caro.id)?.role).toBe("spectator");
+  });
+});
+
+describe("márgenes de inactividad", () => {
+  it("una sala con varias personas sobrevive a desconexiones largas", () => {
+    const store = createStore({
+      disconnectedParticipantGraceMs: 3_600_000,
+      emptyRoomGraceMs: 3_600_000,
+      loneParticipantGraceMs: 300_000,
+    });
+    const { room, participant: ana } = store.createRoom("Ana");
+    const bea = store.joinRoom(room.code, "Bea").participant;
+
+    store.markDisconnected(room.code, ana.id);
+    store.markDisconnected(room.code, bea.id);
+
+    // Media hora en segundo plano no debe expulsar a nadie.
+    clock += 1_800_000;
+    store.sweep();
+
+    expect(store.getRoomByCode(room.code)).toBeDefined();
+    expect(room.participants.size).toBe(2);
+    expect(() => store.reconnect(room.code, ana.id, ana.token)).not.toThrow();
+  });
+
+  it("una sala con una sola persona desconectada se libera antes", () => {
+    const store = createStore({
+      disconnectedParticipantGraceMs: 3_600_000,
+      emptyRoomGraceMs: 3_600_000,
+      loneParticipantGraceMs: 300_000,
+    });
+    const { room, participant } = store.createRoom("Ana");
+    store.markDisconnected(room.code, participant.id);
+
+    clock += 299_000;
+    store.sweep();
+    expect(store.getRoomByCode(room.code)).toBeDefined();
+
+    clock += 2_000;
+    store.sweep();
+    expect(store.getRoomByCode(room.code)).toBeUndefined();
+  });
+
+  it("expira el participante desconectado pasada la hora", () => {
+    const store = createStore({
+      disconnectedParticipantGraceMs: 3_600_000,
+      emptyRoomGraceMs: 3_600_000,
+      loneParticipantGraceMs: 300_000,
+    });
+    const { room, participant: ana } = store.createRoom("Ana");
+    store.joinRoom(room.code, "Bea");
+
+    store.markDisconnected(room.code, ana.id);
+    clock += 3_600_000;
+    store.sweep();
+
+    expect(room.participants.has(ana.id)).toBe(false);
+    expect(store.getRoomByCode(room.code)).toBeDefined();
   });
 });
 

@@ -51,6 +51,7 @@ export type ClientToServerEvents = {
   [CLIENT_EVENTS.ROOM_CREATE]: (payload: {
     alias: string;
     secret?: string;
+    asSpectator?: boolean;
   }) => void;
   [CLIENT_EVENTS.ROOM_JOIN]: (payload: {
     code: string;
@@ -64,8 +65,9 @@ export type ClientToServerEvents = {
   [CLIENT_EVENTS.VOTES_REVEAL]: () => void;
   [CLIENT_EVENTS.ROUND_RESTART]: (payload: { topic?: string }) => void;
   [CLIENT_EVENTS.PARTICIPANT_KICK]: (payload: { participantId: string }) => void;
+  /** Sin `participantId` cambia el rol propio; con él, el del otro (facilitador). */
   [CLIENT_EVENTS.PARTICIPANT_CHANGE_ROLE]: (payload: {
-    participantId: string;
+    participantId?: string;
     role: ParticipantRole;
   }) => void;
   [CLIENT_EVENTS.FACILITATOR_TRANSFER]: (payload: {

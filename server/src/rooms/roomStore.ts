@@ -42,6 +42,11 @@ export type RoomStoreOptions = {
   maxParticipantsPerRoom: number;
   emptyRoomGraceMs: number;
   disconnectedParticipantGraceMs: number;
+  /**
+   * Margen más corto para una sala con una sola persona desconectada: nadie
+   * más la está esperando, así que no tiene sentido reservarla una hora.
+   */
+  loneParticipantGraceMs?: number;
   /** Tope de rondas guardadas: el historial no debe crecer sin límite (§3.6). */
   maxRoundHistory?: number;
   now?: () => number;
@@ -132,7 +137,10 @@ export class RoomStore extends EventEmitter {
     return `${alias} (${room.participants.size + 1})`;
   }
 
-  createRoom(alias: string): { room: Room; participant: Participant } {
+  createRoom(
+    alias: string,
+    asSpectator = false,
+  ): { room: Room; participant: Participant } {
     if (!this.acceptingNewRooms) {
       throw new RoomOperationError(
         "SERVER_SHUTTING_DOWN",
@@ -151,7 +159,7 @@ export class RoomStore extends EventEmitter {
     const facilitator: Participant = {
       id: generateId(),
       alias,
-      role: "facilitator",
+      role: asSpectator ? "spectator" : "player",
       connected: true,
       joinedAt: timestamp,
       token: generateReconnectionToken(),
@@ -279,8 +287,9 @@ export class RoomStore extends EventEmitter {
   }
 
   /**
-   * El rol pasa al jugador conectado con mayor antigüedad; si sólo quedan
-   * espectadores, al espectador conectado más antiguo (§5.6).
+   * El puesto pasa al jugador conectado con mayor antigüedad; si sólo quedan
+   * espectadores, al espectador conectado más antiguo (§5.6). Ser facilitador
+   * no altera el rol: quien lo reciba sigue jugando o mirando igual que antes.
    */
   private reassignFacilitator(room: Room): void {
     const connected = [...room.participants.values()]
@@ -289,15 +298,10 @@ export class RoomStore extends EventEmitter {
 
     const next =
       connected.find((participant) => participant.role === "player") ??
-      connected.find((participant) => participant.role === "spectator");
+      connected[0];
 
-    if (!next) return;
+    if (!next || next.id === room.facilitatorId) return;
 
-    const previous = room.participants.get(room.facilitatorId);
-    if (previous && previous.id !== next.id && previous.role === "facilitator") {
-      previous.role = "player";
-    }
-    next.role = "facilitator";
     room.facilitatorId = next.id;
     this.emitStore("facilitator-changed", { room, facilitatorId: next.id });
   }
@@ -394,14 +398,24 @@ export class RoomStore extends EventEmitter {
     return room;
   }
 
+  /**
+   * Cualquiera puede pasar a espectador y volver a jugar; sólo el facilitador
+   * puede cambiar el rol de otra persona. Ser facilitador no lo impide:
+   * el puesto es independiente de jugar o mirar.
+   */
   changeRole(
     code: string,
     participantId: string,
     targetId: string,
-    role: Exclude<ParticipantRole, "facilitator">,
+    role: ParticipantRole,
   ): Room {
     const room = this.requireRoom(code);
-    this.requireFacilitator(room, participantId);
+    this.requireParticipant(room, participantId);
+
+    if (targetId !== participantId) {
+      this.requireFacilitator(room, participantId);
+    }
+
     const target = room.participants.get(targetId);
     if (!target) {
       throw new RoomOperationError(
@@ -409,13 +423,9 @@ export class RoomStore extends EventEmitter {
         "Ese participante ya no está en la sala.",
       );
     }
-    if (target.id === room.facilitatorId) {
-      throw new RoomOperationError(
-        "INVALID_PAYLOAD",
-        "Transfiere el rol de facilitador antes de cambiar tu propio rol.",
-      );
-    }
+
     target.role = role;
+    // Un espectador no conserva voto: dejaría la ronda contando cartas fantasma.
     if (role === "spectator") room.votes.delete(target.id);
     this.touch(room);
     return room;
@@ -431,8 +441,7 @@ export class RoomStore extends EventEmitter {
         "Ese participante ya no está en la sala.",
       );
     }
-    current.role = "player";
-    target.role = "facilitator";
+    void current;
     room.facilitatorId = target.id;
     this.touch(room);
     this.emitStore("facilitator-changed", { room, facilitatorId: target.id });
@@ -465,9 +474,15 @@ export class RoomStore extends EventEmitter {
         delete room.emptySince;
       }
 
+      // Una sala de una sola persona desconectada se libera antes: no hay
+      // nadie más a quien conservarle el sitio.
+      const grace =
+        room.participants.size <= 1
+          ? (this.options.loneParticipantGraceMs ?? this.options.emptyRoomGraceMs)
+          : this.options.emptyRoomGraceMs;
+
       const expired =
-        room.emptySince !== undefined &&
-        timestamp - room.emptySince >= this.options.emptyRoomGraceMs;
+        room.emptySince !== undefined && timestamp - room.emptySince >= grace;
 
       if (expired || room.participants.size === 0) {
         this.deleteRoom(room, "La sala se cerró por inactividad.");

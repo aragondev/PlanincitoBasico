@@ -503,19 +503,44 @@ button.danger {
 
 /* ---------- Mazo ---------- */
 
-.deck {
+/* Bloque fijo al pie: barra de rol y mazo. */
+.dock {
   position: fixed;
   inset-inline: 0;
   inset-block-end: 0;
   z-index: 10;
+  /* Fondo opaco: con degradado, el contenido se transparentaba por detrás. */
+  background: var(--bg);
+  border-block-start: 1px solid var(--border);
+  padding-block-end: env(safe-area-inset-bottom);
+}
+
+.rolebar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem 0;
+}
+
+.rolebar__text {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.rolebar button {
+  min-block-size: 36px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.82rem;
+  color: var(--accent);
+}
+
+.deck {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
-  /* Fondo opaco: con degradado, el panel de resultados se transparentaba
-     por detrás del mazo. */
-  background: var(--bg);
-  border-block-start: 1px solid var(--border);
+  padding: 0.5rem 1rem 0.75rem;
 }
 
 .deck__hint {
@@ -720,6 +745,38 @@ button.danger {
 .history__card {
   font-weight: 700;
   color: var(--accent);
+}
+
+/* ---------- Festejo por consenso ---------- */
+
+.celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  /* Decorativo: nunca debe robar clics a la interfaz. */
+  pointer-events: none;
+}
+
+.celebration__banner {
+  position: fixed;
+  inset-block-start: 12%;
+  inset-inline: 0;
+  z-index: 41;
+  margin: 0;
+  text-align: center;
+  font-size: clamp(1.6rem, 6vw, 2.6rem);
+  font-weight: 700;
+  color: var(--text);
+  text-shadow: 0 2px 18px rgb(0 0 0 / 60%);
+  pointer-events: none;
+  animation: celebrate-in 0.5s ease-out;
+}
+
+@keyframes celebrate-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
 }
 
 /* ---------- Avisos y diálogos ---------- */

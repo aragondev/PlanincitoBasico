@@ -4,6 +4,7 @@ import { cardLabel } from "./PokerCard";
 type ItemProps = {
   participant: PublicParticipant;
   isMe: boolean;
+  isFacilitator: boolean;
   revealed: boolean;
   canManage: boolean;
   onKick: (participantId: string) => void;
@@ -15,7 +16,6 @@ type ItemProps = {
 };
 
 const ROLE_LABEL: Record<ParticipantRole, string> = {
-  facilitator: "Facilitador",
   player: "Jugador",
   spectator: "Espectador",
 };
@@ -23,6 +23,7 @@ const ROLE_LABEL: Record<ParticipantRole, string> = {
 export function ParticipantItem({
   participant,
   isMe,
+  isFacilitator,
   revealed,
   canManage,
   onKick,
@@ -38,7 +39,9 @@ export function ParticipantItem({
           {alias}
           {isMe && <span className="participant__tag">tú</span>}
         </span>
-        <span className="participant__role">{ROLE_LABEL[role]}</span>
+        <span className="participant__role">
+          {isFacilitator ? `Facilitador · ${ROLE_LABEL[role]}` : ROLE_LABEL[role]}
+        </span>
       </div>
 
       <div className="participant__vote">
@@ -57,9 +60,11 @@ export function ParticipantItem({
 
       {canManage && !isMe && (
         <div className="participant__actions">
-          <button type="button" onClick={() => onTransfer(participantId)}>
-            Hacer facilitador
-          </button>
+          {!isFacilitator && (
+            <button type="button" onClick={() => onTransfer(participantId)}>
+              Hacer facilitador
+            </button>
+          )}
           <button
             type="button"
             onClick={() =>
@@ -81,15 +86,17 @@ export function ParticipantItem({
   );
 }
 
-type ListProps = Omit<ItemProps, "participant" | "isMe"> & {
+type ListProps = Omit<ItemProps, "participant" | "isMe" | "isFacilitator"> & {
   participants: PublicParticipant[];
   myId: string | null;
+  facilitatorId: string;
   maxParticipants: number;
 };
 
 export function ParticipantList({
   participants,
   myId,
+  facilitatorId,
   maxParticipants,
   ...itemProps
 }: ListProps) {
@@ -107,6 +114,7 @@ export function ParticipantList({
             key={participant.participantId}
             participant={participant}
             isMe={participant.participantId === myId}
+            isFacilitator={participant.participantId === facilitatorId}
             {...itemProps}
           />
         ))}

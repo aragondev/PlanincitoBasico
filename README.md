@@ -71,9 +71,10 @@ pruebas de integración con clientes Socket.IO reales.
 | `ACCESS_ATTEMPT_WINDOW_MS`          | `600000`    | Duración del bloqueo por fuerza bruta.          |
 | `MAX_ACTIVE_ROOMS`                  | `25`        | Salas simultáneas permitidas.                   |
 | `MAX_PARTICIPANTS_PER_ROOM`         | `8`         | Personas por sala.                              |
-| `EMPTY_ROOM_GRACE_MS`               | `60000`     | Margen antes de eliminar una sala vacía.        |
+| `EMPTY_ROOM_GRACE_MS`               | `3600000`   | Margen antes de eliminar una sala sin nadie conectado. |
+| `LONE_PARTICIPANT_GRACE_MS`         | `300000`    | Margen si la sala tiene una sola persona desconectada. |
 | `MAX_ROUND_HISTORY`                 | `50`        | Rondas guardadas por sala en el historial.      |
-| `DISCONNECTED_PARTICIPANT_GRACE_MS` | `60000`     | Margen de reconexión de un participante.        |
+| `DISCONNECTED_PARTICIPANT_GRACE_MS` | `3600000`   | Margen de reconexión de un participante.        |
 | `MAX_EVENT_PAYLOAD_BYTES`           | `4096`      | Tamaño máximo por evento.                       |
 | `RATE_LIMIT_MAX_EVENTS`             | `60`        | Eventos por socket dentro de la ventana.        |
 | `RATE_LIMIT_WINDOW_MS`              | `5000`      | Duración de la ventana del límite.              |
@@ -89,6 +90,29 @@ pruebas de integración con clientes Socket.IO reales.
 ## Despliegue
 
 ### Backend en Render Free
+
+## Inactividad y reconexión
+
+Un móvil con la pantalla bloqueada, o una pestaña en segundo plano, cierra el
+WebSocket a los pocos segundos. Para que eso no expulse a nadie de una reunión
+en curso, los márgenes son amplios:
+
+- **Una hora** para volver a una sala donde quedan más personas
+  (`DISCONNECTED_PARTICIPANT_GRACE_MS` y `EMPTY_ROOM_GRACE_MS`).
+- **Cinco minutos** si la sala tiene una sola persona y está desconectada
+  (`LONE_PARTICIPANT_GRACE_MS`): nadie más la está esperando, así que no tiene
+  sentido reservar memoria una hora.
+
+Salir con el botón *Salir* es inmediato y no espera ningún margen.
+
+## Roles
+
+Ser **facilitador** es independiente de jugar o mirar. Quien crea la sala puede
+marcar *espectador* desde el inicio y seguir revelando y reiniciando rondas.
+
+Cualquiera puede pasar a espectador y volver a jugar desde la barra inferior,
+sin pedir permiso a nadie. Pasar a espectador retira el voto de la ronda en
+curso. El facilitador, además, puede cambiar el rol de otras personas.
 
 ## Historial de rondas
 

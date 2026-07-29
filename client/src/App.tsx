@@ -96,7 +96,7 @@ export function App() {
       <HomePage
         status={room.status}
         busy={busy}
-        onCreate={room.createRoom}
+        onCreate={(alias, asSpectator) => room.createRoom(alias, asSpectator)}
         onJoin={(code, alias) => {
           // No cambiamos la URL aquí: si el código es inválido o la sala no
           // existe, el usuario debe quedarse en el inicio con el aviso de error.

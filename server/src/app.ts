@@ -51,6 +51,7 @@ export function createApp(config: Config = defaultConfig): App {
     maxParticipantsPerRoom: config.maxParticipantsPerRoom,
     emptyRoomGraceMs: config.emptyRoomGraceMs,
     disconnectedParticipantGraceMs: config.disconnectedParticipantGraceMs,
+    loneParticipantGraceMs: config.loneParticipantGraceMs,
     maxRoundHistory: config.maxRoundHistory,
   });
 
