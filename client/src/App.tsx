@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ConnectionStatus } from "./components/ConnectionStatus";
 import { Toast } from "./components/Feedback";
 import {
@@ -7,6 +7,7 @@ import {
   useRoomCodeFromHash,
 } from "./hooks/useHashRoute";
 import { useRoom } from "./hooks/useRoom";
+import { hasStoredAccessSecret } from "./socket/accessSecret";
 import { useAppUpdate } from "./hooks/useAppUpdate";
 import { useTheme } from "./hooks/useTheme";
 import { AccessGatePage } from "./pages/AccessGatePage";
@@ -18,6 +19,13 @@ export function App() {
   const room = useRoom();
   const { theme, toggle: toggleTheme } = useTheme();
   const { updateAvailable, reload } = useAppUpdate();
+  const [secretStored, setSecretStored] = useState(hasStoredAccessSecret);
+
+  // La frase se guarda al entrar por primera vez, así que hay que releerla
+  // cada vez que se vuelve a la portada, no sólo al arrancar.
+  useEffect(() => {
+    if (!room.state) setSecretStored(hasStoredAccessSecret());
+  }, [room.state]);
   const hashCode = useRoomCodeFromHash();
 
   // Mantiene la URL alineada con la sala activa para que el enlace sea compartible.
@@ -123,6 +131,11 @@ export function App() {
       <HomePage
         status={room.status}
         busy={busy}
+        secretStored={secretStored}
+        onForgetSecret={() => {
+          room.forgetAccessSecret();
+          setSecretStored(false);
+        }}
         onCreate={(alias, asSpectator) => room.createRoom(alias, asSpectator)}
         onJoin={(code, alias) => {
           // No cambiamos la URL aquí: si el código es inválido o la sala no

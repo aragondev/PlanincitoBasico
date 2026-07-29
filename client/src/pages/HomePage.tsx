@@ -6,6 +6,9 @@ import type { ConnectionStatus as Status } from "../hooks/useRoom";
 type Props = {
   status: Status;
   busy: boolean;
+  /** Hay una frase de acceso recordada de una visita anterior. */
+  secretStored: boolean;
+  onForgetSecret: () => void;
   onCreate: (alias: string, asSpectator: boolean) => void;
   onJoin: (code: string, alias: string) => void;
 };
@@ -14,7 +17,14 @@ type Props = {
  * Un solo alias para las dos acciones: antes había un campo por formulario y
  * una nota pidiendo repetirlo, que sobra si el dato se pide una vez.
  */
-export function HomePage({ status, busy, onCreate, onJoin }: Props) {
+export function HomePage({
+  status,
+  busy,
+  secretStored,
+  onForgetSecret,
+  onCreate,
+  onJoin,
+}: Props) {
   const [alias, setAlias] = useState("");
   const [code, setCode] = useState("");
   const [asSpectator, setAsSpectator] = useState(false);
@@ -117,6 +127,15 @@ export function HomePage({ status, busy, onCreate, onJoin }: Props) {
           </button>
         </form>
       </div>
+
+      {secretStored && (
+        <p className="home__secret">
+          Frase de acceso recordada en este navegador.{" "}
+          <button type="button" className="md-button--text" onClick={onForgetSecret}>
+            Olvidar
+          </button>
+        </p>
+      )}
 
       {status !== "idle" && status !== "connected" && (
         <ConnectionStatus status={status} />
