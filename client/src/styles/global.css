@@ -1,14 +1,26 @@
 :root {
-  --bg: #0f1420;
-  --surface: #182031;
-  --surface-2: #212b40;
-  --border: #2d3852;
-  --text: #eef2f9;
-  --muted: #9aa7bd;
-  --accent: #4f8cff;
-  --accent-strong: #2f6fe4;
-  --danger: #e2586a;
-  --ok: #43c59e;
+  /* Paleta tomada de dismac.com.bo: rojo #EC1F26, azul #006BB4,
+     verde #5ACD98 y amarillo #FBDF2D. Sobre fondo oscuro el rojo puro
+     vibra, así que se reserva para acciones y acentos —nunca para
+     superficies grandes— y el azul se aclara para mantener el contraste. */
+  --bg: #14161c;
+  --surface: #1d2028;
+  --surface-2: #272b35;
+  --border: #363b47;
+  --text: #f2f4f7;
+  --muted: #9aa1ae;
+
+  --brand: #ec1f26;
+  --brand-strong: #c4141a;
+  --brand-soft: #ff6b70;
+
+  --accent: #2e9be0;
+  --accent-strong: #006bb4;
+
+  --ok: #5acd98;
+  --warn: #fbdf2d;
+  --danger: #ec1f26;
+
   --radius: 12px;
   --gap: 1rem;
   color-scheme: dark;
@@ -71,7 +83,7 @@ input[type="text"] {
 
 input[type="text"]:focus-visible,
 button:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--brand-soft);
   outline-offset: 2px;
 }
 
@@ -92,10 +104,14 @@ button:disabled {
 }
 
 button.primary {
-  background: var(--accent);
-  border-color: var(--accent-strong);
-  color: #08111f;
+  background: var(--brand);
+  border-color: var(--brand-strong);
+  color: #ffffff;
   font-weight: 600;
+}
+
+button.primary:not(:disabled):hover {
+  background: var(--brand-strong);
 }
 
 button.secondary {
@@ -109,7 +125,7 @@ button.ghost {
 button.danger {
   background: transparent;
   border-color: var(--danger);
-  color: var(--danger);
+  color: var(--brand-soft);
 }
 
 .checkbox {
@@ -245,18 +261,26 @@ button.danger {
 
 .room-header__identity {
   display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 0.6rem;
+  min-inline-size: 0;
+  flex: 1;
+}
+
+.room-header__code {
+  white-space: nowrap;
 }
 
 .room-header__code strong {
   letter-spacing: 0.12em;
-  font-size: 1.25rem;
+  font-size: 1.15rem;
+  color: var(--brand-soft);
 }
 
 .room-header__round {
   color: var(--muted);
   font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 .room-header__actions {
@@ -266,27 +290,45 @@ button.danger {
   flex-wrap: wrap;
 }
 
+/* Tema: una línea dentro del encabezado, editable al pulsar. */
 .topic {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: var(--gap);
+  margin: 0;
+  min-inline-size: 0;
+  flex: 1;
+  font-size: 0.95rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.topic__label {
-  font-size: 0.85rem;
+.topic--button {
+  text-align: start;
+  background: transparent;
+  border: 1px dashed transparent;
+  border-radius: 8px;
+  padding: 0.2rem 0.5rem;
+  min-block-size: 32px;
+}
+
+.topic--button:hover {
+  border-color: var(--border);
+}
+
+.topic--empty {
   color: var(--muted);
-  font-weight: 400;
+  font-style: italic;
 }
 
-.topic__value {
-  margin: 0.25rem 0 0;
-  font-size: 1.05rem;
+.topic--editing {
+  flex: 1;
+  min-inline-size: 0;
 }
 
-.topic__form {
-  display: flex;
-  gap: 0.5rem;
+.topic--editing input {
+  inline-size: 100%;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.95rem;
 }
 
 /* ---------- Participantes ---------- */
@@ -327,8 +369,8 @@ button.danger {
 
 .participant__tag {
   font-size: 0.7rem;
-  color: var(--accent);
-  border: 1px solid var(--accent);
+  color: var(--brand-soft);
+  border: 1px solid var(--brand-soft);
   border-radius: 999px;
   padding: 0 0.4rem;
 }
@@ -367,8 +409,9 @@ button.danger {
   display: flex;
   flex-direction: column;
   gap: var(--gap);
-  /* Deja aire para que el mazo fijo no tape el contenido. */
-  padding-block-end: 11rem;
+  /* Hueco exacto para el bloque fijo inferior, medido en tiempo real.
+     El valor de reserva cubre el primer render, antes de la medición. */
+  padding-block-end: calc(var(--dock-height, 12rem) + 1.5rem);
 }
 
 .table {
@@ -398,8 +441,8 @@ button.danger {
   padding: 1.5rem;
   border-radius: 20px;
   background: var(--surface);
-  border: 1px solid var(--accent);
-  box-shadow: 0 0 24px rgb(79 140 255 / 25%);
+  border: 1px solid var(--border);
+  box-shadow: 0 0 32px rgb(0 0 0 / 45%);
 }
 
 .table__status {
@@ -457,8 +500,8 @@ button.danger {
 
 /* Reverso con textura sólo cuando ya hay voto: así se ve quién votó. */
 .seat__card--voted .seat__face--back {
-  border: 1px solid var(--accent);
-  background-color: #6aa6ff;
+  border: 1px solid var(--brand-strong);
+  background-color: var(--brand);
   background-image: repeating-linear-gradient(
       45deg,
       rgb(255 255 255 / 35%) 0 4px,
@@ -474,7 +517,7 @@ button.danger {
 .seat__face--front {
   transform: rotateY(180deg);
   background: var(--surface-2);
-  border: 1px solid var(--accent);
+  border: 1px solid var(--brand-soft);
   color: var(--text);
 }
 
@@ -533,7 +576,7 @@ button.danger {
   min-block-size: 36px;
   padding: 0.3rem 0.7rem;
   font-size: 0.82rem;
-  color: var(--accent);
+  color: var(--brand-soft);
 }
 
 .deck {
@@ -572,9 +615,9 @@ button.danger {
   place-items: center;
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--accent);
-  background: transparent;
-  border: 2px solid var(--accent);
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--border);
   border-radius: 10px;
   transition:
     transform 0.15s ease,
@@ -586,9 +629,14 @@ button.danger {
 }
 
 .deck__card--selected {
-  background: var(--accent);
-  color: #08111f;
+  background: var(--brand);
+  border-color: var(--brand-strong);
+  color: #ffffff;
   transform: translateY(-10px);
+}
+
+.deck__card:not(:disabled):not(.deck__card--selected):hover {
+  border-color: var(--brand-soft);
 }
 
 /* ---------- Resultados ---------- */
@@ -649,7 +697,7 @@ button.danger {
 .distribution__fill {
   display: block;
   block-size: 100%;
-  background: var(--accent);
+  background: var(--brand);
 }
 
 .distribution__count {
@@ -744,7 +792,91 @@ button.danger {
 
 .history__card {
   font-weight: 700;
-  color: var(--accent);
+  color: var(--brand-soft);
+}
+
+/* ---------- Lanzar objetos ---------- */
+
+.seat__slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+/* La carta de quien falta por votar invita a que le lancen algo. */
+.seat__card--target {
+  padding: 0;
+  background: transparent;
+  border: none;
+  min-block-size: auto;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.seat__card--target:hover {
+  transform: translateY(-3px);
+}
+
+.throwmenu {
+  position: absolute;
+  inset-block-end: calc(100% + 0.4rem);
+  z-index: 20;
+  display: flex;
+  gap: 0.15rem;
+  padding: 0.25rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 45%);
+}
+
+.throwmenu__item {
+  inline-size: 34px;
+  block-size: 34px;
+  min-block-size: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-size: 1.05rem;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.throwmenu__item:hover {
+  background: var(--surface);
+  transform: scale(1.15);
+}
+
+/* Proyectil en vuelo: decorativo, nunca intercepta clics. */
+.flight {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 30;
+  font-size: 1.6rem;
+  line-height: 1;
+  pointer-events: none;
+  /* El transform de la animación posiciona el elemento; este margen lo centra. */
+  margin: -0.8rem 0 0 -0.8rem;
+}
+
+.flight--impact {
+  animation: flight-impact 0.5s ease-out forwards;
+}
+
+@keyframes flight-impact {
+  0% {
+    filter: none;
+  }
+  30% {
+    filter: brightness(1.6);
+  }
+  100% {
+    opacity: 0;
+    filter: none;
+  }
 }
 
 /* ---------- Festejo por consenso ---------- */

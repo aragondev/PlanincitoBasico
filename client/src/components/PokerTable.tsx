@@ -1,5 +1,11 @@
-import type { PublicParticipant, PublicRoomState } from "@planincito/shared";
+import { useState } from "react";
+import type {
+  PublicParticipant,
+  PublicRoomState,
+  Throwable,
+} from "@planincito/shared";
 import { cardLabel } from "./PokerCard";
+import { ThrowMenu } from "./ThrowMenu";
 
 /**
  * Asiento: carta boca abajo mientras se vota y volteo 3D al revelar.
@@ -9,17 +15,24 @@ function Seat({
   participant,
   revealed,
   isMe,
+  onThrow,
 }: {
   participant: PublicParticipant;
   revealed: boolean;
   isMe: boolean;
+  onThrow: (participantId: string, item: Throwable) => void;
 }) {
-  const { alias, role, connected, hasVoted, vote } = participant;
+  const { alias, role, connected, hasVoted, vote, participantId } = participant;
+  const [menuOpen, setMenuOpen] = useState(false);
 
   if (role === "spectator") {
     return (
       <li className={`seat${connected ? "" : " seat--offline"}`}>
-        <span className="seat__card seat__card--spectator" aria-label="Espectador">
+        <span
+          className="seat__card seat__card--spectator"
+          data-seat={participantId}
+          aria-label="Espectador"
+        >
           👁
         </span>
         <span className={`seat__alias${isMe ? " seat__alias--me" : ""}`}>{alias}</span>
@@ -29,23 +42,59 @@ function Seat({
 
   // El volteo sólo ocurre cuando hay carta que mostrar.
   const flipped = revealed && vote !== undefined;
+  // Sólo tiene sentido apurar a otra persona que aún no votó.
+  const canThrow = !isMe && !hasVoted && !revealed;
 
   return (
-    <li className={`seat${connected ? "" : " seat--offline"}`}>
-      <div
-        className={`seat__card${hasVoted ? " seat__card--voted" : ""}${
-          flipped ? " seat__card--flipped" : ""
-        }`}
-        aria-label={
-          revealed
-            ? `${alias}: ${vote ? cardLabel(vote) : "sin voto"}`
-            : `${alias}: ${hasVoted ? "ya votó" : "pendiente"}`
-        }
-      >
-        <span className="seat__face seat__face--back" />
-        <span className="seat__face seat__face--front">
-          {vote !== undefined ? cardLabel(vote) : ""}
-        </span>
+    <li
+      className={`seat${connected ? "" : " seat--offline"}`}
+      onMouseEnter={() => canThrow && setMenuOpen(true)}
+      onMouseLeave={() => setMenuOpen(false)}
+    >
+      <div className="seat__slot">
+        {canThrow ? (
+          <button
+            type="button"
+            className={`seat__card seat__card--target${hasVoted ? " seat__card--voted" : ""}`}
+            data-seat={participantId}
+            aria-label={`Lanzar algo a ${alias}, que aún no ha votado`}
+            aria-expanded={menuOpen}
+            onClick={(event) => {
+              event.stopPropagation();
+              setMenuOpen((open) => !open);
+            }}
+          >
+            <span className="seat__face seat__face--back" />
+          </button>
+        ) : (
+          <div
+            className={`seat__card${hasVoted ? " seat__card--voted" : ""}${
+              flipped ? " seat__card--flipped" : ""
+            }`}
+            data-seat={participantId}
+            aria-label={
+              revealed
+                ? `${alias}: ${vote ? cardLabel(vote) : "sin voto"}`
+                : `${alias}: ${hasVoted ? "ya votó" : "pendiente"}`
+            }
+          >
+            <span className="seat__face seat__face--back" />
+            <span className="seat__face seat__face--front">
+              {vote !== undefined ? cardLabel(vote) : ""}
+            </span>
+          </div>
+        )}
+
+        {menuOpen && canThrow && (
+          <ThrowMenu
+            alias={alias}
+            onPick={(item) => {
+              onThrow(participantId, item);
+              setMenuOpen(false);
+            }}
+            onClose={() => setMenuOpen(false)}
+          />
+        )}
       </div>
       <span className={`seat__alias${isMe ? " seat__alias--me" : ""}`}>{alias}</span>
     </li>
@@ -58,6 +107,7 @@ type Props = {
   isFacilitator: boolean;
   onReveal: () => void;
   onRestart: () => void;
+  onThrow: (participantId: string, item: Throwable) => void;
 };
 
 export function PokerTable({
@@ -66,6 +116,7 @@ export function PokerTable({
   isFacilitator,
   onReveal,
   onRestart,
+  onThrow,
 }: Props) {
   const revealed = state.status === "revealed";
   const others = state.participants.filter((p) => p.participantId !== myId);
@@ -88,6 +139,7 @@ export function PokerTable({
             participant={participant}
             revealed={revealed}
             isMe={false}
+            onThrow={onThrow}
           />
         ))}
       </ul>
@@ -127,10 +179,17 @@ export function PokerTable({
             participant={participant}
             revealed={revealed}
             isMe={false}
+            onThrow={onThrow}
           />
         ))}
         {me && (
-          <Seat key={me.participantId} participant={me} revealed={revealed} isMe />
+          <Seat
+            key={me.participantId}
+            participant={me}
+            revealed={revealed}
+            isMe
+            onThrow={onThrow}
+          />
         )}
       </ul>
     </section>

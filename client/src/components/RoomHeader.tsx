@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { inviteLinkFor } from "../hooks/useHashRoute";
 import { ConnectionStatus } from "./ConnectionStatus";
+import { TopicEditor } from "./TopicEditor";
 import type { ConnectionStatus as Status } from "../hooks/useRoom";
 
 export function CopyInviteLink({ code }: { code: string }) {
@@ -34,17 +35,30 @@ type Props = {
   code: string;
   round: number;
   status: Status;
+  topic: string;
+  canEditTopic: boolean;
+  onTopicChange: (topic: string) => void;
   onLeave: () => void;
 };
 
-export function RoomHeader({ code, round, status, onLeave }: Props) {
+export function RoomHeader({
+  code,
+  round,
+  status,
+  topic,
+  canEditTopic,
+  onTopicChange,
+  onLeave,
+}: Props) {
   return (
     <header className="room-header">
       <div className="room-header__identity">
         <h1 className="room-header__code">
-          Sala <strong>{code}</strong>
+          <strong>{code}</strong>
         </h1>
         <span className="room-header__round">Ronda {round}</span>
+        {/* El tema vive aquí para no robarle una fila entera a la mesa. */}
+        <TopicEditor topic={topic} canEdit={canEditTopic} onChange={onTopicChange} />
       </div>
       <div className="room-header__actions">
         <ConnectionStatus status={status} />

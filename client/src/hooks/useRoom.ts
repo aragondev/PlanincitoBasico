@@ -7,6 +7,7 @@ import {
   type PublicRoomState,
   type RoomError,
   type SessionCredentials,
+  type Throwable,
 } from "@planincito/shared";
 import { createSocket, type AppSocket } from "../socket/client";
 import {
@@ -16,6 +17,7 @@ import {
   stageAccessSecret,
 } from "../socket/accessSecret";
 import { clearSession, loadSession, saveSession } from "../socket/session";
+import type { Flight } from "../components/ThrowFlight";
 
 export type ConnectionStatus =
   | "idle"
@@ -58,6 +60,10 @@ export type RoomApi = {
   /** Alterna entre jugar y mirar sin depender de nadie más. */
   setOwnRole: (role: ParticipantRole) => void;
   transferFacilitator: (participantId: string) => void;
+  /** Lanzamientos en vuelo; se consumen al terminar su animación. */
+  flights: Flight[];
+  throwItem: (participantId: string, item: Throwable) => void;
+  endFlight: (id: number) => void;
   dismissError: () => void;
   submitAccessSecret: (secret: string) => void;
   reset: () => void;
@@ -82,6 +88,8 @@ export function useRoom(): RoomApi {
    * recargar aparezca un instante la pantalla de "entrar a la sala".
    */
   const [booting, setBooting] = useState(() => loadSession() !== null);
+  const [flights, setFlights] = useState<Flight[]>([]);
+  const flightId = useRef(0);
 
   if (socketRef.current === null) socketRef.current = createSocket();
   const socket = socketRef.current;
@@ -192,6 +200,18 @@ export function useRoom(): RoomApi {
       setStatus("room-gone");
     };
 
+    const onThrown = (payload: {
+      fromId: string;
+      fromAlias: string;
+      toId: string;
+      item: Throwable;
+    }) => {
+      flightId.current += 1;
+      const flight: Flight = { id: flightId.current, ...payload };
+      // Tope defensivo: si alguien insiste, no acumulamos nodos sin fin.
+      setFlights((current) => [...current.slice(-11), flight]);
+    };
+
     const onRestarting = (payload: { message: string }) => setNotice(payload.message);
 
     const onRoundRestarted = (payload: { state: PublicRoomState }) => {
@@ -213,6 +233,7 @@ export function useRoom(): RoomApi {
     socket.on(SERVER_EVENTS.ROOM_ERROR, onError);
     socket.on(SERVER_EVENTS.ROOM_CLOSED, onClosed);
     socket.on(SERVER_EVENTS.SERVER_RESTARTING, onRestarting);
+    socket.on(SERVER_EVENTS.THROWN, onThrown);
 
     return () => {
       socket.removeAllListeners();
@@ -301,6 +322,7 @@ export function useRoom(): RoomApi {
     intentRef.current = null;
     setState(null);
     setCredentials(null);
+    setFlights([]);
     setMyVote(undefined);
     setError(null);
     setNotice(null);
@@ -341,6 +363,11 @@ export function useRoom(): RoomApi {
       setOwnRole: (role) => emit(CLIENT_EVENTS.PARTICIPANT_CHANGE_ROLE, { role }),
       transferFacilitator: (participantId) =>
         emit(CLIENT_EVENTS.FACILITATOR_TRANSFER, { participantId }),
+      flights,
+      throwItem: (participantId, item) =>
+        emit(CLIENT_EVENTS.THROW, { participantId, item }),
+      endFlight: (id) =>
+        setFlights((current) => current.filter((flight) => flight.id !== id)),
       dismissError: () => setError(null),
       submitAccessSecret,
       reset,
@@ -348,7 +375,7 @@ export function useRoom(): RoomApi {
     [
       status, state, credentials, error, notice, accessRejected, booting,
       myId, isFacilitator,
-      effectiveVote, start, emit, submitAccessSecret, reset,
+      effectiveVote, flights, start, emit, submitAccessSecret, reset,
     ],
   );
 }

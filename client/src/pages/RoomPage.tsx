@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { hasConsensus } from "@planincito/shared";
 import { CardDeck } from "../components/CardDeck";
 import { Celebration } from "../components/Celebration";
@@ -7,7 +7,7 @@ import { ParticipantList } from "../components/ParticipantList";
 import { PokerTable } from "../components/PokerTable";
 import { RoomHeader } from "../components/RoomHeader";
 import { RoundHistory } from "../components/RoundHistory";
-import { TopicEditor } from "../components/TopicEditor";
+import { ThrowFlight } from "../components/ThrowFlight";
 import { VotingResults } from "../components/VotingResults";
 import type { RoomApi } from "../hooks/useRoom";
 
@@ -15,6 +15,26 @@ export function RoomPage({ room }: { room: RoomApi }) {
   const { state, myId, isFacilitator } = room;
   const kickTarget = useConfirmation<string>();
   const [celebrating, setCelebrating] = useState(false);
+  const dockRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * El bloque inferior es fijo y su altura cambia (espectador sin mazo, mazo
+   * en dos líneas…). Se mide y se publica como variable CSS para reservar
+   * exactamente ese hueco, en vez de un valor fijo que acaba tapando cosas.
+   */
+  useEffect(() => {
+    const dock = dockRef.current;
+    if (!dock) return undefined;
+    const observer = new ResizeObserver(([entry]) => {
+      const height = entry?.borderBoxSize?.[0]?.blockSize ?? dock.offsetHeight;
+      document.documentElement.style.setProperty("--dock-height", `${height}px`);
+    });
+    observer.observe(dock);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty("--dock-height");
+    };
+  }, []);
 
   const consensusKey =
     state && state.status === "revealed" && hasConsensus(state.results)
@@ -51,13 +71,10 @@ export function RoomPage({ room }: { room: RoomApi }) {
         code={state.code}
         round={state.round}
         status={room.status}
-        onLeave={room.leaveRoom}
-      />
-
-      <TopicEditor
         topic={state.topic}
-        canEdit={isFacilitator}
-        onChange={room.setTopic}
+        canEditTopic={isFacilitator}
+        onTopicChange={room.setTopic}
+        onLeave={room.leaveRoom}
       />
 
       <main className="room__stage">
@@ -67,6 +84,7 @@ export function RoomPage({ room }: { room: RoomApi }) {
           isFacilitator={isFacilitator}
           onReveal={room.reveal}
           onRestart={() => room.restartRound()}
+          onThrow={room.throwItem}
         />
 
         {revealed && state.results && <VotingResults results={state.results} />}
@@ -90,7 +108,7 @@ export function RoomPage({ room }: { room: RoomApi }) {
         )}
       </main>
 
-      <div className="dock">
+      <div className="dock" ref={dockRef}>
         <section className="rolebar">
           <span className="rolebar__text">{roleHint}</span>
           <button
@@ -111,6 +129,10 @@ export function RoomPage({ room }: { room: RoomApi }) {
           />
         )}
       </div>
+
+      {room.flights.map((flight) => (
+        <ThrowFlight key={flight.id} flight={flight} onDone={room.endFlight} />
+      ))}
 
       {celebrating && <Celebration onDone={() => setCelebrating(false)} />}
 

@@ -10,6 +10,7 @@ export const CARD_VALUES = [
   "21",
   "34",
   "55",
+  "89",
   "?",
   "coffee",
 ] as const;
@@ -111,6 +112,11 @@ export function hasConsensus(results: RoundResults | null): boolean {
   if (numeric.length !== 1) return false;
   return numeric[0]!.count >= 2;
 }
+
+/** Objetos que se pueden lanzar a quien todavía no ha votado. */
+export const THROWABLES = ["plane", "paper", "tomato", "clap", "coffee"] as const;
+
+export type Throwable = (typeof THROWABLES)[number];
 
 /** Credenciales temporales guardadas en `sessionStorage` (§9). */
 export type SessionCredentials = {

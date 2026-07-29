@@ -449,6 +449,45 @@ export class RoomStore extends EventEmitter {
   }
 
   /**
+   * Comprueba que se puede lanzar algo a ese participante: sólo a quien
+   * sigue en la sala, no a uno mismo y sólo mientras no haya votado.
+   */
+  assertCanThrow(
+    code: string,
+    participantId: string,
+    targetId: string,
+  ): { room: Room; from: Participant; to: Participant } {
+    const room = this.requireRoom(code);
+    const from = this.requireParticipant(room, participantId);
+    if (targetId === participantId) {
+      throw new RoomOperationError(
+        "INVALID_PAYLOAD",
+        "No puedes lanzarte cosas a ti mismo.",
+      );
+    }
+    const to = room.participants.get(targetId);
+    if (!to) {
+      throw new RoomOperationError(
+        "PARTICIPANT_NOT_FOUND",
+        "Ese participante ya no está en la sala.",
+      );
+    }
+    if (to.role === "spectator") {
+      throw new RoomOperationError(
+        "INVALID_PAYLOAD",
+        "Los espectadores no votan, no hay por qué apurarlos.",
+      );
+    }
+    if (room.votes.has(targetId)) {
+      throw new RoomOperationError(
+        "INVALID_PAYLOAD",
+        "Esa persona ya votó.",
+      );
+    }
+    return { room, from, to };
+  }
+
+  /**
    * Barrido único de mantenimiento (§3.6): elimina participantes desconectados
    * pasado el margen y salas vacías pasado el suyo.
    */

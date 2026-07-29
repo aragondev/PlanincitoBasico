@@ -44,9 +44,9 @@ describe("computeResults", () => {
 });
 
 describe("mazo", () => {
-  it("llega hasta 55 en la escala Fibonacci", () => {
+  it("llega hasta 89 en la escala Fibonacci", () => {
     expect(CARD_VALUES).toEqual([
-      "0","1","2","3","5","8","13","21","34","55","?","coffee",
+      "0","1","2","3","5","8","13","21","34","55","89","?","coffee",
     ]);
   });
 

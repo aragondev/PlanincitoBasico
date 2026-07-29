@@ -17,6 +17,7 @@ import {
   parseId,
   parseRole,
   parseRoomCode,
+  parseThrowable,
   parseTopic,
 } from "../validation/input.js";
 import type { AccessGate } from "./accessGate.js";
@@ -284,6 +285,23 @@ export function registerSocketHandlers(
       guard(socket, (payload) => {
         const { code, participantId } = context(socket);
         store.transferFacilitator(code, participantId, parseId(payload?.participantId));
+      }),
+    );
+
+    socket.on(
+      CLIENT_EVENTS.THROW,
+      guard(socket, (payload) => {
+        const { code, participantId } = context(socket);
+        const targetId = parseId(payload?.participantId);
+        const item = parseThrowable(payload?.item);
+        const { room, from, to } = store.assertCanThrow(code, participantId, targetId);
+        // Gesto puramente visual: no toca el estado de la sala.
+        io.to(room.code).emit(SERVER_EVENTS.THROWN, {
+          fromId: from.id,
+          fromAlias: from.alias,
+          toId: to.id,
+          item,
+        });
       }),
     );
 

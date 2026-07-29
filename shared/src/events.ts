@@ -1,6 +1,7 @@
 import type {
   CardValue,
   ParticipantRole,
+  Throwable,
   PublicParticipant,
   PublicRoomState,
   RoomError,
@@ -30,6 +31,7 @@ export const CLIENT_EVENTS = {
   PARTICIPANT_KICK: "participant:kick",
   PARTICIPANT_CHANGE_ROLE: "participant:change-role",
   FACILITATOR_TRANSFER: "facilitator:transfer",
+  THROW: "participant:throw",
 } as const;
 
 export const SERVER_EVENTS = {
@@ -44,6 +46,7 @@ export const SERVER_EVENTS = {
   FACILITATOR_CHANGED: "facilitator:changed",
   SERVER_RESTARTING: "server:restarting",
   ROOM_CLOSED: "room:closed",
+  THROWN: "participant:thrown",
 } as const;
 
 export type ClientToServerEvents = {
@@ -72,6 +75,11 @@ export type ClientToServerEvents = {
   }) => void;
   [CLIENT_EVENTS.FACILITATOR_TRANSFER]: (payload: {
     participantId: string;
+  }) => void;
+  /** Lanza un objeto a quien aún no ha votado, para meterle prisa con humor. */
+  [CLIENT_EVENTS.THROW]: (payload: {
+    participantId: string;
+    item: Throwable;
   }) => void;
 };
 
@@ -106,4 +114,11 @@ export type ServerToClientEvents = {
   }) => void;
   [SERVER_EVENTS.SERVER_RESTARTING]: (payload: { message: string }) => void;
   [SERVER_EVENTS.ROOM_CLOSED]: (payload: { reason: string }) => void;
+  /** No cambia el estado de la sala: es sólo un gesto que se anima. */
+  [SERVER_EVENTS.THROWN]: (payload: {
+    fromId: string;
+    fromAlias: string;
+    toId: string;
+    item: Throwable;
+  }) => void;
 };

@@ -2,8 +2,10 @@ import {
   CARD_VALUES,
   LIMITS,
   ROOM_CODE_ALPHABET,
+  THROWABLES,
   type CardValue,
   type ParticipantRole,
+  type Throwable,
 } from "@planincito/shared";
 
 export class ValidationError extends Error {
@@ -102,6 +104,13 @@ export function parseRole(value: unknown): Exclude<ParticipantRole, "facilitator
     );
   }
   return value;
+}
+
+export function parseThrowable(value: unknown): Throwable {
+  if (typeof value !== "string" || !THROWABLES.includes(value as Throwable)) {
+    throw new ValidationError("INVALID_PAYLOAD", "Ese objeto no se puede lanzar.");
+  }
+  return value as Throwable;
 }
 
 /** Rechaza payloads desproporcionados antes de procesarlos (§3.5). */

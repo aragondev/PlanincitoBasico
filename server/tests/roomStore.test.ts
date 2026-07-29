@@ -369,6 +369,47 @@ describe("márgenes de inactividad", () => {
   });
 });
 
+describe("lanzar objetos", () => {
+  it("se puede lanzar a quien aún no ha votado", () => {
+    const store = createStore();
+    const { room, participant: ana } = store.createRoom("Ana");
+    const bea = store.joinRoom(room.code, "Bea").participant;
+    expect(() => store.assertCanThrow(room.code, ana.id, bea.id)).not.toThrow();
+  });
+
+  it("no se puede lanzar a quien ya votó", () => {
+    const store = createStore();
+    const { room, participant: ana } = store.createRoom("Ana");
+    const bea = store.joinRoom(room.code, "Bea").participant;
+    store.submitVote(room.code, bea.id, "5");
+    expect(() => store.assertCanThrow(room.code, ana.id, bea.id)).toThrowError(
+      /ya votó/i,
+    );
+  });
+
+  it("no se puede lanzar a un espectador ni a uno mismo", () => {
+    const store = createStore();
+    const { room, participant: ana } = store.createRoom("Ana");
+    const bea = store.joinRoom(room.code, "Bea", true).participant;
+    expect(() => store.assertCanThrow(room.code, ana.id, bea.id)).toThrowError(
+      /espectadores/i,
+    );
+    expect(() => store.assertCanThrow(room.code, ana.id, ana.id)).toThrowError(
+      /a ti mismo/i,
+    );
+  });
+
+  it("no se puede lanzar a alguien que ya se fue", () => {
+    const store = createStore();
+    const { room, participant: ana } = store.createRoom("Ana");
+    const bea = store.joinRoom(room.code, "Bea").participant;
+    store.kick(room.code, ana.id, bea.id);
+    expect(() => store.assertCanThrow(room.code, ana.id, bea.id)).toThrowError(
+      /ya no está/i,
+    );
+  });
+});
+
 describe("historial de rondas", () => {
   it("guarda cada ronda revelada con tema, resultados y votos", () => {
     const store = createStore();
