@@ -8,6 +8,8 @@ export const CARD_VALUES = [
   "8",
   "13",
   "21",
+  "34",
+  "55",
   "?",
   "coffee",
 ] as const;
@@ -17,7 +19,12 @@ export type CardValue = (typeof CARD_VALUES)[number];
 /** Cartas que no participan en promedio ni mediana (§5.4). */
 export const NON_NUMERIC_CARDS: readonly CardValue[] = ["?", "coffee"];
 
-export type ParticipantRole = "facilitator" | "player" | "spectator";
+/**
+ * Ser facilitador es independiente de jugar o mirar: se determina por
+ * `PublicRoomState.facilitatorId`, no por este campo. Así quien crea la sala
+ * puede ponerse en modo espectador sin dejar de dirigir la ronda.
+ */
+export type ParticipantRole = "player" | "spectator";
 
 export type RoomStatus = "voting" | "revealed";
 
@@ -91,6 +98,19 @@ export type RoomError = {
   code: RoomErrorCode;
   message: string;
 };
+
+/**
+ * Hay consenso cuando al menos dos personas votaron números y todas
+ * coincidieron. `?` y `☕` no cuentan, igual que en promedio y mediana.
+ */
+export function hasConsensus(results: RoundResults | null): boolean {
+  if (!results) return false;
+  const numeric = results.distribution.filter(
+    (entry) => !NON_NUMERIC_CARDS.includes(entry.value),
+  );
+  if (numeric.length !== 1) return false;
+  return numeric[0]!.count >= 2;
+}
 
 /** Credenciales temporales guardadas en `sessionStorage` (§9). */
 export type SessionCredentials = {

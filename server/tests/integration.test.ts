@@ -260,7 +260,8 @@ describe("reconexión y facilitador", () => {
       (p) => p.participantId === host.credentials.participantId,
     )!;
     expect(me.connected).toBe(true);
-    expect(me.role).toBe("facilitator");
+    expect(state.facilitatorId).toBe(host.credentials.participantId);
+    expect(me.role).toBe("player");
     expect(me.hasVoted).toBe(true);
     expect(state.facilitatorId).toBe(host.credentials.participantId);
   });

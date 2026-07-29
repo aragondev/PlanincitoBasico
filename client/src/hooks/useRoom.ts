@@ -28,7 +28,7 @@ export type ConnectionStatus =
   | "locked";
 
 type Intent =
-  | { type: "create"; alias: string }
+  | { type: "create"; alias: string; asSpectator: boolean }
   | { type: "join"; code: string; alias: string; asSpectator: boolean }
   | { type: "reconnect"; credentials: SessionCredentials };
 
@@ -46,7 +46,7 @@ export type RoomApi = {
   myId: string | null;
   isFacilitator: boolean;
   myVote: CardValue | undefined;
-  createRoom: (alias: string) => void;
+  createRoom: (alias: string, asSpectator?: boolean) => void;
   joinRoom: (code: string, alias: string, asSpectator?: boolean) => void;
   leaveRoom: () => void;
   vote: (value: CardValue) => void;
@@ -54,7 +54,9 @@ export type RoomApi = {
   restartRound: (topic?: string) => void;
   setTopic: (topic: string) => void;
   kick: (participantId: string) => void;
-  changeRole: (participantId: string, role: Exclude<ParticipantRole, "facilitator">) => void;
+  changeRole: (participantId: string, role: ParticipantRole) => void;
+  /** Alterna entre jugar y mirar sin depender de nadie más. */
+  setOwnRole: (role: ParticipantRole) => void;
   transferFacilitator: (participantId: string) => void;
   dismissError: () => void;
   submitAccessSecret: (secret: string) => void;
@@ -102,6 +104,7 @@ export function useRoom(): RoomApi {
       socket.emit(CLIENT_EVENTS.ROOM_CREATE, {
         alias: intent.alias,
         secret: getAccessSecret(),
+        asSpectator: intent.asSpectator,
       });
     } else if (intent.type === "join") {
       socket.emit(CLIENT_EVENTS.ROOM_JOIN, {
@@ -316,7 +319,8 @@ export function useRoom(): RoomApi {
       myId,
       isFacilitator,
       myVote: effectiveVote,
-      createRoom: (alias) => start({ type: "create", alias }),
+      createRoom: (alias, asSpectator = false) =>
+        start({ type: "create", alias, asSpectator }),
       joinRoom: (code, alias, asSpectator = false) =>
         start({ type: "join", code, alias, asSpectator }),
       leaveRoom: () => {
@@ -334,6 +338,7 @@ export function useRoom(): RoomApi {
         emit(CLIENT_EVENTS.PARTICIPANT_KICK, { participantId }),
       changeRole: (participantId, role) =>
         emit(CLIENT_EVENTS.PARTICIPANT_CHANGE_ROLE, { participantId, role }),
+      setOwnRole: (role) => emit(CLIENT_EVENTS.PARTICIPANT_CHANGE_ROLE, { role }),
       transferFacilitator: (participantId) =>
         emit(CLIENT_EVENTS.FACILITATOR_TRANSFER, { participantId }),
       dismissError: () => setError(null),

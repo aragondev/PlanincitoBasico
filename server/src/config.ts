@@ -29,12 +29,18 @@ export const config = {
   accessAttemptWindowMs: num("ACCESS_ATTEMPT_WINDOW_MS", 600_000),
   maxActiveRooms: num("MAX_ACTIVE_ROOMS", 25),
   maxParticipantsPerRoom: num("MAX_PARTICIPANTS_PER_ROOM", 8),
-  emptyRoomGraceMs: num("EMPTY_ROOM_GRACE_MS", 60_000),
+  /**
+   * Una hora: un móvil en segundo plano corta el WebSocket a los pocos
+   * segundos, y con márgenes cortos expulsaba a gente que seguía en la reunión.
+   */
+  emptyRoomGraceMs: num("EMPTY_ROOM_GRACE_MS", 3_600_000),
+  /** Sala con una sola persona desconectada: se libera en 5 minutos. */
+  loneParticipantGraceMs: num("LONE_PARTICIPANT_GRACE_MS", 300_000),
   /** Rondas conservadas por sala; el historial vive sólo mientras la sala. */
   maxRoundHistory: num("MAX_ROUND_HISTORY", 50),
   disconnectedParticipantGraceMs: num(
     "DISCONNECTED_PARTICIPANT_GRACE_MS",
-    60_000,
+    3_600_000,
   ),
   maxEventPayloadBytes: num(
     "MAX_EVENT_PAYLOAD_BYTES",

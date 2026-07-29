@@ -6,13 +6,14 @@ import type { ConnectionStatus as Status } from "../hooks/useRoom";
 type Props = {
   status: Status;
   busy: boolean;
-  onCreate: (alias: string) => void;
+  onCreate: (alias: string, asSpectator: boolean) => void;
   onJoin: (code: string, alias: string) => void;
 };
 
 export function HomePage({ status, busy, onCreate, onJoin }: Props) {
   const [alias, setAlias] = useState("");
   const [code, setCode] = useState("");
+  const [asSpectator, setAsSpectator] = useState(false);
 
   const trimmedAlias = alias.trim();
   const normalizedCode = code.trim().toUpperCase();
@@ -28,7 +29,7 @@ export function HomePage({ status, busy, onCreate, onJoin }: Props) {
           className="panel"
           onSubmit={(event) => {
             event.preventDefault();
-            onCreate(trimmedAlias);
+            onCreate(trimmedAlias, asSpectator);
           }}
         >
           <h2 className="panel__title">Crear una sala</h2>
@@ -42,6 +43,15 @@ export function HomePage({ status, busy, onCreate, onJoin }: Props) {
             placeholder="Ana"
             onChange={(event) => setAlias(event.target.value)}
           />
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={asSpectator}
+              onChange={(event) => setAsSpectator(event.target.checked)}
+            />
+            Entrar como espectador (no vota)
+          </label>
+
           <button type="submit" className="primary" disabled={!trimmedAlias || busy}>
             Crear sala
           </button>

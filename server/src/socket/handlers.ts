@@ -162,7 +162,10 @@ export function registerSocketHandlers(
       guard(socket, (payload) => {
         accessGate.assertCanCreate(socket, payload?.secret);
         const alias = parseAlias(payload?.alias);
-        const { room, participant } = store.createRoom(alias);
+        const { room, participant } = store.createRoom(
+          alias,
+          payload?.asSpectator === true,
+        );
         enterRoom(socket, room, participant, SERVER_EVENTS.ROOM_CREATED);
       }),
     );
@@ -265,13 +268,13 @@ export function registerSocketHandlers(
       CLIENT_EVENTS.PARTICIPANT_CHANGE_ROLE,
       guard(socket, (payload) => {
         const { code, participantId } = context(socket);
+        // Sin `participantId` el cambio es sobre uno mismo.
+        const targetId =
+          payload?.participantId === undefined
+            ? participantId
+            : parseId(payload.participantId);
         broadcastState(
-          store.changeRole(
-            code,
-            participantId,
-            parseId(payload?.participantId),
-            parseRole(payload?.role),
-          ),
+          store.changeRole(code, participantId, targetId, parseRole(payload?.role)),
         );
       }),
     );
