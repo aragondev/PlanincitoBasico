@@ -2,10 +2,12 @@ import { useState } from "react";
 import type {
   PublicParticipant,
   PublicRoomState,
+  RoundResults,
   Throwable,
 } from "@planincito/shared";
 import { cardLabel } from "./PokerCard";
 import { ThrowMenu } from "./ThrowMenu";
+import { ResultsSummary } from "./VotingResults";
 
 /**
  * Asiento: carta boca abajo mientras se vota y volteo 3D al revelar.
@@ -52,8 +54,9 @@ function Seat({
   return (
     <li
       className={`seat${connected ? "" : " seat--offline"}`}
+      // El puntero lo abre; cerrarlo es cosa del clic fuera, no de apartar
+      // el ratón: si no, elegir un objeto obligaba a un clic previo.
       onMouseEnter={() => hoverCapable && canThrow && setMenuOpen(true)}
-      onMouseLeave={() => hoverCapable && setMenuOpen(false)}
     >
       <div className="seat__slot">
         {canThrow ? (
@@ -118,6 +121,8 @@ type Props = {
   onThrow: (participantId: string, item: Throwable) => void;
   /** Segundos que faltan para revelar, o `null` si no hay cuenta atrás. */
   countdown: number | null;
+  /** Resumen que se muestra en la mesa una vez reveladas las cartas. */
+  results: RoundResults | null;
 };
 
 export function PokerTable({
@@ -128,6 +133,7 @@ export function PokerTable({
   onRestart,
   onThrow,
   countdown,
+  results,
 }: Props) {
   const revealed = state.status === "revealed";
   const others = state.participants.filter((p) => p.participantId !== myId);
@@ -167,6 +173,7 @@ export function PokerTable({
           </p>
         ) : (
           <>
+            {results && <ResultsSummary results={results} />}
             {isFacilitator ? (
               revealed ? (
                 <button type="button" className="primary" onClick={onRestart}>

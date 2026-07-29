@@ -118,10 +118,12 @@ export function ParticipantList({
       <button
         type="button"
         className="md-button--text drawer__toggle"
+        aria-label="Participantes"
         aria-expanded={open}
         onClick={() => setOpen(true)}
       >
-        Participantes
+        <span aria-hidden="true">👥</span>
+        <span className="drawer__toggle-label">Participantes</span>
         <span className="drawer__badge">
           {participants.length}/{maxParticipants}
         </span>
