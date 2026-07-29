@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { ParticipantRole, PublicParticipant } from "@planincito/shared";
 import { cardLabel } from "./PokerCard";
 
@@ -8,10 +9,7 @@ type ItemProps = {
   revealed: boolean;
   canManage: boolean;
   onKick: (participantId: string) => void;
-  onChangeRole: (
-    participantId: string,
-    role: Exclude<ParticipantRole, "facilitator">,
-  ) => void;
+  onChangeRole: (participantId: string, role: ParticipantRole) => void;
   onTransfer: (participantId: string) => void;
 };
 
@@ -93,6 +91,10 @@ type ListProps = Omit<ItemProps, "participant" | "isMe" | "isFacilitator"> & {
   maxParticipants: number;
 };
 
+/**
+ * Panel lateral, igual que el historial: la sala debe mostrar la mesa y el
+ * mazo, no listas que obliguen a desplazarse y saquen el tablero de la vista.
+ */
 export function ParticipantList({
   participants,
   myId,
@@ -100,25 +102,70 @@ export function ParticipantList({
   maxParticipants,
   ...itemProps
 }: ListProps) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
-    <section className="panel" aria-label="Participantes">
-      <h2 className="panel__title">
+    <>
+      <button
+        type="button"
+        className="md-button--text drawer__toggle"
+        aria-expanded={open}
+        onClick={() => setOpen(true)}
+      >
         Participantes
-        <span className="panel__count">
+        <span className="drawer__badge">
           {participants.length}/{maxParticipants}
         </span>
-      </h2>
-      <ul className="participants">
-        {participants.map((participant) => (
-          <ParticipantItem
-            key={participant.participantId}
-            participant={participant}
-            isMe={participant.participantId === myId}
-            isFacilitator={participant.participantId === facilitatorId}
-            {...itemProps}
-          />
-        ))}
-      </ul>
-    </section>
+      </button>
+
+      {open && (
+        <div
+          className="drawer__scrim"
+          role="presentation"
+          onClick={() => setOpen(false)}
+        >
+          <aside
+            className="drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Participantes"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="drawer__header">
+              <h2>Participantes</h2>
+              <button
+                type="button"
+                className="md-icon-button"
+                aria-label="Cerrar participantes"
+                onClick={() => setOpen(false)}
+              >
+                ✕
+              </button>
+            </header>
+
+            <ul className="participants">
+              {participants.map((participant) => (
+                <ParticipantItem
+                  key={participant.participantId}
+                  participant={participant}
+                  isMe={participant.participantId === myId}
+                  isFacilitator={participant.participantId === facilitatorId}
+                  {...itemProps}
+                />
+              ))}
+            </ul>
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

@@ -105,6 +105,12 @@ en curso, los márgenes son amplios:
 
 Salir con el botón *Salir* es inmediato y no espera ningún margen.
 
+## Tema claro y oscuro
+
+Arranca siguiendo la preferencia del sistema y se cambia con el botón del
+encabezado. La elección se recuerda en el navegador; mientras no se elija a
+mano, la aplicación sigue los cambios del sistema.
+
 ## Roles
 
 Ser **facilitador** es independiente de jugar o mirar. Quien crea la sala puede
@@ -118,11 +124,11 @@ curso. El facilitador, además, puede cambiar el rol de otras personas.
 
 Mientras alguien no haya votado, su carta se puede pulsar (o basta pasar el
 ratón en escritorio) para lanzarle un avioncito de papel, una bola de papel,
-un tomate o una piedra.
+un tomate, una piedra o una flecha.
 
 Los objetos entran en andanada desde ambos laterales y convergen en la carta
-del destinatario: los tomates se aplastan al impactar y el resto cae al suelo.
-Lo ven todos los de la sala.
+del destinatario: los tomates se aplastan al impactar, las flechas se clavan y
+el resto rebota y queda a los pies de la carta. Lo ven todos los de la sala.
 
 Es un gesto puramente visual: no toca el estado de la sala ni queda registrado.
 El servidor sólo comprueba que la persona siga dentro, no sea espectador y no
@@ -132,8 +138,8 @@ haya votado todavía.
 
 Cada ronda revelada queda registrada con su tema, sus estadísticas y la carta de
 cada participante. Se consulta desde el botón *Historial* del encabezado, que
-abre un panel lateral: así no ocupa sitio en la sala ni obliga a desplazarse
-perdiendo de vista la mesa. Lo ven todos, no sólo el facilitador, y el alias se
+abre un panel lateral —igual que *Participantes*—: así no ocupan sitio en la
+sala ni obligan a desplazarse perdiendo de vista la mesa. Lo ven todos, no sólo el facilitador, y el alias se
 conserva aunque esa persona se haya ido.
 
 **Dura lo que dura la sala.** Vive en el mismo `Map` en memoria: si la sala se

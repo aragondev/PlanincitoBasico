@@ -7,6 +7,7 @@ import {
   useRoomCodeFromHash,
 } from "./hooks/useHashRoute";
 import { useRoom } from "./hooks/useRoom";
+import { useTheme } from "./hooks/useTheme";
 import { AccessGatePage } from "./pages/AccessGatePage";
 import { HomePage } from "./pages/HomePage";
 import { JoinRoomPage } from "./pages/JoinRoomPage";
@@ -14,6 +15,7 @@ import { RoomPage } from "./pages/RoomPage";
 
 export function App() {
   const room = useRoom();
+  const { theme, toggle: toggleTheme } = useTheme();
   const hashCode = useRoomCodeFromHash();
 
   // Mantiene la URL alineada con la sala activa para que el enlace sea compartible.
@@ -62,7 +64,7 @@ export function App() {
   if (room.state) {
     return (
       <>
-        <RoomPage room={room} />
+        <RoomPage room={room} theme={theme} onToggleTheme={toggleTheme} />
         {feedback}
       </>
     );

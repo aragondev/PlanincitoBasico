@@ -9,8 +9,17 @@ import { RoomHeader } from "../components/RoomHeader";
 import { ThrowFlight } from "../components/ThrowFlight";
 import { VotingResults } from "../components/VotingResults";
 import type { RoomApi } from "../hooks/useRoom";
+import type { Theme } from "../hooks/useTheme";
 
-export function RoomPage({ room }: { room: RoomApi }) {
+export function RoomPage({
+  room,
+  theme,
+  onToggleTheme,
+}: {
+  room: RoomApi;
+  theme: Theme;
+  onToggleTheme: () => void;
+}) {
   const { state, myId, isFacilitator } = room;
   const kickTarget = useConfirmation<string>();
   const [celebrating, setCelebrating] = useState(false);
@@ -75,6 +84,21 @@ export function RoomPage({ room }: { room: RoomApi }) {
         onTopicChange={room.setTopic}
         onLeave={room.leaveRoom}
         history={state.history}
+        participants={
+          <ParticipantList
+            participants={state.participants}
+            myId={myId}
+            facilitatorId={state.facilitatorId}
+            maxParticipants={state.maxParticipants}
+            revealed={revealed}
+            canManage={isFacilitator}
+            onKick={kickTarget.ask}
+            onChangeRole={room.changeRole}
+            onTransfer={room.transferFacilitator}
+          />
+        }
+        theme={theme}
+        onToggleTheme={onToggleTheme}
       />
 
       <main className="room__stage">
@@ -85,25 +109,11 @@ export function RoomPage({ room }: { room: RoomApi }) {
           onReveal={room.reveal}
           onRestart={() => room.restartRound()}
           onThrow={room.throwItem}
+          consensus={consensusKey !== null}
         />
 
         {revealed && state.results && <VotingResults results={state.results} />}
 
-        {/* La gestión de participantes sólo le sirve al facilitador: los demás
-            ya ven a todos en la mesa. */}
-        {isFacilitator && (
-          <ParticipantList
-            participants={state.participants}
-            myId={myId}
-            facilitatorId={state.facilitatorId}
-            maxParticipants={state.maxParticipants}
-            revealed={revealed}
-            canManage
-            onKick={kickTarget.ask}
-            onChangeRole={room.changeRole}
-            onTransfer={room.transferFacilitator}
-          />
-        )}
       </main>
 
       <div className="dock" ref={dockRef}>

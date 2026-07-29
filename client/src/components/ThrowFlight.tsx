@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Throwable } from "@planincito/shared";
-import { THROWABLE_EMOJI } from "./ThrowMenu";
+import { ThrowableIcon } from "./ThrowMenu";
 
 export type Flight = {
   id: number;
@@ -13,13 +13,20 @@ export type Flight = {
 /** Cuántos proyectiles salen por lanzamiento: una andanada, no uno solo. */
 const VOLLEY: Record<Throwable, number> = {
   plane: 4,
+  arrow: 3,
   paper: 4,
   tomato: 3,
   rock: 2,
 };
 
-/** Los que se estampan contra la carta en vez de caer al suelo. */
+/** Los que se estampan contra la carta en vez de rebotar. */
 const SPLATS: Throwable[] = ["tomato"];
+
+/** Los que se clavan y quedan colgando en vez de rebotar. */
+const STICKS: Throwable[] = ["arrow"];
+
+/** Media carta: el objeto cae hasta sus pies, no hasta el suelo de la sala. */
+const CARD_FOOT = 34;
 
 type Projectile = {
   key: number;
@@ -68,14 +75,18 @@ export function ThrowFlight({
       // Escalonados en altura para que la andanada no parezca una sola línea.
       offsetY: (index - (count - 1) / 2) * 22,
       delay: index * 90,
-      spin: flight.item === "plane" ? 0 : (index % 2 === 0 ? 1 : -1) * 540,
+      spin:
+        flight.item === "plane" || flight.item === "arrow"
+          ? 0
+          : (index % 2 === 0 ? 1 : -1) * 540,
     }));
     setProjectiles(items);
 
     const centerX = target.left + target.width / 2;
     const centerY = target.top + target.height / 2;
+    const stick = STICKS.includes(flight.item);
     const travel = reduced ? 220 : 620;
-    const linger = splat ? 700 : 900;
+    const linger = splat ? 700 : 820;
 
     const animations: Animation[] = [];
     const raf = requestAnimationFrame(() => {
@@ -87,9 +98,9 @@ export function ThrowFlight({
 
         const startX = projectile.fromLeft ? -60 : window.innerWidth + 60;
         const startY = centerY + projectile.offsetY;
-        // Los aviones apuntan hacia donde vuelan; el resto gira sobre sí mismo.
-        const facing =
-          flight.item === "plane" ? (projectile.fromLeft ? 0 : 180) : 0;
+        // Aviones y flechas apuntan hacia donde vuelan; el resto gira solo.
+        const aimed = flight.item === "plane" || flight.item === "arrow";
+        const facing = aimed ? (projectile.fromLeft ? 0 : 180) : 0;
 
         const impactFrame = {
           transform: `translate(${centerX}px, ${centerY}px) rotate(${facing + projectile.spin}deg) scale(1)`,
@@ -97,17 +108,26 @@ export function ThrowFlight({
           offset: 0.75,
         };
 
-        const endFrame = splat
-          ? {
-              // Se aplasta contra la carta y se desvanece ahí mismo.
-              transform: `translate(${centerX}px, ${centerY}px) rotate(${facing}deg) scale(1.9, 0.55)`,
-              opacity: 0,
-            }
-          : {
-              // Cae al suelo desde el punto de impacto.
-              transform: `translate(${centerX}px, ${centerY + 190}px) rotate(${facing + projectile.spin + 120}deg) scale(0.9)`,
-              opacity: 0,
-            };
+        let endFrame: Keyframe;
+        if (splat) {
+          // Se aplasta contra la carta y se desvanece ahí mismo.
+          endFrame = {
+            transform: `translate(${centerX}px, ${centerY}px) rotate(${facing}deg) scale(1.9, 0.55)`,
+            opacity: 0,
+          };
+        } else if (stick) {
+          // Se clava en la carta y se queda temblando un instante.
+          endFrame = {
+            transform: `translate(${centerX + (projectile.fromLeft ? 6 : -6)}px, ${centerY}px) rotate(${facing}deg) scale(1)`,
+            opacity: 0,
+          };
+        } else {
+          // Rebota y queda a los pies de la carta, no cae media pantalla.
+          endFrame = {
+            transform: `translate(${centerX + (projectile.fromLeft ? 14 : -14)}px, ${centerY + CARD_FOOT}px) rotate(${facing + projectile.spin + 60}deg) scale(0.85)`,
+            opacity: 0,
+          };
+        }
 
         animations.push(
           element.animate(
@@ -118,6 +138,12 @@ export function ThrowFlight({
                 offset: 0,
               },
               impactFrame,
+              // Pequeño rebote hacia arriba justo tras el impacto.
+              {
+                transform: `translate(${centerX + (projectile.fromLeft ? 8 : -8)}px, ${centerY - 12}px) rotate(${facing + projectile.spin}deg) scale(0.95)`,
+                opacity: 1,
+                offset: 0.86,
+              },
               endFrame,
             ],
             {
@@ -150,7 +176,7 @@ export function ThrowFlight({
           className="flight"
           aria-hidden="true"
         >
-          {THROWABLE_EMOJI[flight.item]}
+          <ThrowableIcon item={flight.item} className="flight__glyph" />
         </span>
       ))}
     </>

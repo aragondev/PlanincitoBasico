@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { inviteLinkFor } from "../hooks/useHashRoute";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { RoundHistory } from "./RoundHistory";
 import { TopicEditor } from "./TopicEditor";
 import type { RoundHistoryEntry } from "@planincito/shared";
 import type { ConnectionStatus as Status } from "../hooks/useRoom";
+import type { Theme } from "../hooks/useTheme";
 
 export function CopyInviteLink({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
@@ -42,6 +43,10 @@ type Props = {
   onTopicChange: (topic: string) => void;
   onLeave: () => void;
   history: RoundHistoryEntry[];
+  /** Panel de participantes, inyectado para no acoplar el encabezado a la sala. */
+  participants: ReactNode;
+  theme: Theme;
+  onToggleTheme: () => void;
 };
 
 export function RoomHeader({
@@ -53,6 +58,9 @@ export function RoomHeader({
   onTopicChange,
   onLeave,
   history,
+  participants,
+  theme,
+  onToggleTheme,
 }: Props) {
   return (
     <header className="room-header">
@@ -66,8 +74,18 @@ export function RoomHeader({
       </div>
       <div className="room-header__actions">
         <ConnectionStatus status={status} />
+        {participants}
         <RoundHistory history={history} />
         <CopyInviteLink code={code} />
+        <button
+          type="button"
+          className="md-icon-button"
+          aria-label={theme === "dark" ? "Usar tema claro" : "Usar tema oscuro"}
+          title={theme === "dark" ? "Tema claro" : "Tema oscuro"}
+          onClick={onToggleTheme}
+        >
+          {theme === "dark" ? "☀️" : "🌙"}
+        </button>
         <button type="button" className="ghost" onClick={onLeave}>
           Salir
         </button>
