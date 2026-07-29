@@ -10,7 +10,8 @@ type Particle = {
   size: number;
 };
 
-const COLORS = ["#4f8cff", "#43c59e", "#e8b04b", "#e2586a", "#c58bff", "#eef2f9"];
+/** Oro, rojo de naipe y verde de tapete: la gama de la mesa. */
+const COLORS = ["#e8c56a", "#d4a63c", "#c8102e", "#5acd98", "#f7f4ec", "#a8801c"];
 const GRAVITY = 0.045;
 const DRAG = 0.988;
 const DURATION_MS = 4200;

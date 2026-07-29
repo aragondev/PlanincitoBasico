@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { LIMITS } from "@planincito/shared";
 import { ConnectionStatus } from "../components/ConnectionStatus";
 import type { ConnectionStatus as Status } from "../hooks/useRoom";
@@ -18,10 +18,26 @@ export function HomePage({ status, busy, onCreate, onJoin }: Props) {
   const [alias, setAlias] = useState("");
   const [code, setCode] = useState("");
   const [asSpectator, setAsSpectator] = useState(false);
+  const [aliasMissing, setAliasMissing] = useState(false);
+  const aliasRef = useRef<HTMLInputElement>(null);
 
   const trimmedAlias = alias.trim();
   const normalizedCode = code.trim().toUpperCase();
   const codeReady = normalizedCode.length === LIMITS.ROOM_CODE_LENGTH;
+
+  /**
+   * Un botón apagado sin explicación deja al usuario mirando un código bien
+   * escrito sin saber que le falta el alias. Se deja pulsable y se señala.
+   */
+  const withAlias = (action: () => void) => () => {
+    if (!trimmedAlias) {
+      setAliasMissing(true);
+      aliasRef.current?.focus();
+      return;
+    }
+    setAliasMissing(false);
+    action();
+  };
 
   return (
     <main className="home">
@@ -30,6 +46,7 @@ export function HomePage({ status, busy, onCreate, onJoin }: Props) {
       <div className="panel home__card">
         <label htmlFor="alias">Tu alias</label>
         <input
+          ref={aliasRef}
           id="alias"
           type="text"
           value={alias}
@@ -37,8 +54,19 @@ export function HomePage({ status, busy, onCreate, onJoin }: Props) {
           autoComplete="nickname"
           autoFocus
           placeholder="Ana"
-          onChange={(event) => setAlias(event.target.value)}
+          aria-invalid={aliasMissing}
+          aria-describedby={aliasMissing ? "alias-error" : undefined}
+          onChange={(event) => {
+            setAlias(event.target.value);
+            if (event.target.value.trim()) setAliasMissing(false);
+          }}
         />
+
+        {aliasMissing && (
+          <p className="error" id="alias-error">
+            Escribe tu alias para continuar.
+          </p>
+        )}
 
         <label className="checkbox">
           <input
@@ -52,8 +80,8 @@ export function HomePage({ status, busy, onCreate, onJoin }: Props) {
         <button
           type="button"
           className="primary home__cta"
-          disabled={!trimmedAlias || busy}
-          onClick={() => onCreate(trimmedAlias, asSpectator)}
+          disabled={busy}
+          onClick={withAlias(() => onCreate(trimmedAlias, asSpectator))}
         >
           Crear sala
         </button>
@@ -66,7 +94,7 @@ export function HomePage({ status, busy, onCreate, onJoin }: Props) {
           className="home__join"
           onSubmit={(event) => {
             event.preventDefault();
-            onJoin(normalizedCode, trimmedAlias);
+            withAlias(() => onJoin(normalizedCode, trimmedAlias))();
           }}
         >
           <input
@@ -83,7 +111,7 @@ export function HomePage({ status, busy, onCreate, onJoin }: Props) {
           <button
             type="submit"
             className="secondary"
-            disabled={!trimmedAlias || !codeReady || busy}
+            disabled={!codeReady || busy}
           >
             Entrar
           </button>
