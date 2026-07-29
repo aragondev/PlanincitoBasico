@@ -69,8 +69,16 @@ export function ThrowMenu({ alias, onPick, onClose }: Props) {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
+    /**
+     * Se cierra al pulsar fuera, pero no dentro del propio asiento: la carta
+     * y el menú son la misma zona de interacción.
+     */
     const onPointerDown = (event: PointerEvent) => {
-      if (!ref.current?.contains(event.target as Node)) onClose();
+      const target = event.target as Node;
+      if (ref.current?.contains(target)) return;
+      const seat = ref.current?.closest(".seat__slot");
+      if (seat?.contains(target)) return;
+      onClose();
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("pointerdown", onPointerDown);

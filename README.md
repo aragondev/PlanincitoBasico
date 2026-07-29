@@ -130,8 +130,8 @@ curso. El facilitador, además, puede cambiar el rol de otras personas.
 
 ## Lanzar objetos
 
-Mientras alguien no haya votado, su carta se puede pulsar (o basta pasar el
-ratón en escritorio) para lanzarle un avioncito de papel, una bola de papel,
+Mientras alguien no haya votado, su carta se puede pulsar —o basta pasar el
+ratón en escritorio, y el menú se queda abierto hasta que pulses fuera— para lanzarle un avioncito de papel, una bola de papel,
 un tomate, una piedra o una flecha.
 
 Los objetos entran en andanada desde ambos laterales y convergen en la carta
@@ -146,7 +146,7 @@ haya votado todavía.
 
 Cada ronda revelada queda registrada con su tema, sus estadísticas y la carta de
 cada participante. Se consulta desde el botón *Historial* del encabezado, que
-abre un panel lateral —igual que *Participantes*—: así no ocupan sitio en la
+abre un panel lateral —igual que *Participantes* y *Resultados*—: así no ocupan sitio en la
 sala ni obligan a desplazarse perdiendo de vista la mesa. Lo ven todos, no sólo el facilitador, y el alias se
 conserva aunque esa persona se haya ido.
 

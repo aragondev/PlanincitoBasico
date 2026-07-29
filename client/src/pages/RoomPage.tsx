@@ -99,6 +99,11 @@ export function RoomPage({
             onTransfer={room.transferFacilitator}
           />
         }
+        results={
+          revealed && state.results ? (
+            <VotingResults results={state.results} />
+          ) : null
+        }
         theme={theme}
         onToggleTheme={onToggleTheme}
       />
@@ -112,9 +117,9 @@ export function RoomPage({
           onRestart={() => room.restartRound()}
           onThrow={room.throwItem}
           countdown={room.countdown}
+          results={revealed ? state.results : null}
         />
 
-        {revealed && state.results && <VotingResults results={state.results} />}
 
       </main>
 

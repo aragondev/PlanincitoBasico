@@ -28,8 +28,17 @@ export function CopyInviteLink({ code }: { code: string }) {
   };
 
   return (
-    <button type="button" className="secondary" onClick={() => void copy()}>
-      {copied ? "¡Enlace copiado!" : "Copiar enlace"}
+    <button
+      type="button"
+      className="md-button--text drawer__toggle"
+      aria-label="Copiar enlace de invitación"
+      title="Copiar enlace de invitación"
+      onClick={() => void copy()}
+    >
+      <span aria-hidden="true">{copied ? "✅" : "🔗"}</span>
+      <span className="drawer__toggle-label">
+        {copied ? "¡Copiado!" : "Invitar"}
+      </span>
     </button>
   );
 }
@@ -43,8 +52,9 @@ type Props = {
   onTopicChange: (topic: string) => void;
   onLeave: () => void;
   history: RoundHistoryEntry[];
-  /** Panel de participantes, inyectado para no acoplar el encabezado a la sala. */
+  /** Paneles inyectados para no acoplar el encabezado a la sala. */
   participants: ReactNode;
+  results: ReactNode;
   theme: Theme;
   onToggleTheme: () => void;
 };
@@ -59,6 +69,7 @@ export function RoomHeader({
   onLeave,
   history,
   participants,
+  results,
   theme,
   onToggleTheme,
 }: Props) {
@@ -74,6 +85,7 @@ export function RoomHeader({
       </div>
       <div className="room-header__actions">
         <ConnectionStatus status={status} />
+        {results}
         {participants}
         <RoundHistory history={history} />
         <CopyInviteLink code={code} />
@@ -86,8 +98,14 @@ export function RoomHeader({
         >
           {theme === "dark" ? "☀️" : "🌙"}
         </button>
-        <button type="button" className="ghost" onClick={onLeave}>
-          Salir
+        <button
+          type="button"
+          className="md-icon-button"
+          aria-label="Salir de la sala"
+          title="Salir"
+          onClick={onLeave}
+        >
+          ⏏️
         </button>
       </div>
     </header>
