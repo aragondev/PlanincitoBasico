@@ -6,7 +6,6 @@ import { ConfirmationDialog, useConfirmation } from "../components/Feedback";
 import { ParticipantList } from "../components/ParticipantList";
 import { PokerTable } from "../components/PokerTable";
 import { RoomHeader } from "../components/RoomHeader";
-import { RoundHistory } from "../components/RoundHistory";
 import { ThrowFlight } from "../components/ThrowFlight";
 import { VotingResults } from "../components/VotingResults";
 import type { RoomApi } from "../hooks/useRoom";
@@ -75,6 +74,7 @@ export function RoomPage({ room }: { room: RoomApi }) {
         canEditTopic={isFacilitator}
         onTopicChange={room.setTopic}
         onLeave={room.leaveRoom}
+        history={state.history}
       />
 
       <main className="room__stage">
@@ -88,8 +88,6 @@ export function RoomPage({ room }: { room: RoomApi }) {
         />
 
         {revealed && state.results && <VotingResults results={state.results} />}
-
-        <RoundHistory history={state.history} />
 
         {/* La gestión de participantes sólo le sirve al facilitador: los demás
             ya ven a todos en la mesa. */}

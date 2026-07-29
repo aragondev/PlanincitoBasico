@@ -24,6 +24,10 @@ function Seat({
 }) {
   const { alias, role, connected, hasVoted, vote, participantId } = participant;
   const [menuOpen, setMenuOpen] = useState(false);
+  // En escritorio el menú se abre al pasar el ratón, así que el clic sólo
+  // debe abrirlo donde no hay puntero fino; si no, hacía falta pulsar dos veces.
+  const hoverCapable =
+    typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches;
 
   if (role === "spectator") {
     return (
@@ -48,8 +52,8 @@ function Seat({
   return (
     <li
       className={`seat${connected ? "" : " seat--offline"}`}
-      onMouseEnter={() => canThrow && setMenuOpen(true)}
-      onMouseLeave={() => setMenuOpen(false)}
+      onMouseEnter={() => hoverCapable && canThrow && setMenuOpen(true)}
+      onMouseLeave={() => hoverCapable && setMenuOpen(false)}
     >
       <div className="seat__slot">
         {canThrow ? (
@@ -61,7 +65,8 @@ function Seat({
             aria-expanded={menuOpen}
             onClick={(event) => {
               event.stopPropagation();
-              setMenuOpen((open) => !open);
+              if (!hoverCapable) setMenuOpen((open) => !open);
+              else setMenuOpen(true);
             }}
           >
             <span className="seat__face seat__face--back" />

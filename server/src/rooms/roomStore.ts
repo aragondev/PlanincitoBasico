@@ -334,6 +334,21 @@ export class RoomStore extends EventEmitter {
     return room;
   }
 
+  /** Deshace el voto propio; sólo tiene sentido antes de revelar. */
+  retractVote(code: string, participantId: string): Room {
+    const room = this.requireRoom(code);
+    this.requireParticipant(room, participantId);
+    if (room.status === "revealed") {
+      throw new RoomOperationError(
+        "ROUND_ALREADY_REVEALED",
+        "La ronda ya fue revelada.",
+      );
+    }
+    room.votes.delete(participantId);
+    this.touch(room);
+    return room;
+  }
+
   reveal(code: string, participantId: string): Room {
     const room = this.requireRoom(code);
     this.requireFacilitator(room, participantId);

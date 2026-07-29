@@ -2,19 +2,17 @@ import { useEffect, useRef } from "react";
 import { THROWABLES, type Throwable } from "@planincito/shared";
 
 export const THROWABLE_EMOJI: Record<Throwable, string> = {
-  plane: "✈️",
+  plane: "🛩️",
   paper: "📄",
   tomato: "🍅",
-  clap: "👏",
-  coffee: "☕",
+  rock: "🪨",
 };
 
 const THROWABLE_LABEL: Record<Throwable, string> = {
-  plane: "Avioncito",
+  plane: "Avioncito de papel",
   paper: "Bola de papel",
   tomato: "Tomate",
-  clap: "Aplauso",
-  coffee: "Café",
+  rock: "Piedra",
 };
 
 type Props = {
@@ -31,7 +29,6 @@ export function ThrowMenu({ alias, onPick, onClose }: Props) {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
-    // En móvil se cierra tocando fuera; en escritorio, al salir el puntero.
     const onPointerDown = (event: PointerEvent) => {
       if (!ref.current?.contains(event.target as Node)) onClose();
     };
