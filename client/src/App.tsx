@@ -7,6 +7,7 @@ import {
   useRoomCodeFromHash,
 } from "./hooks/useHashRoute";
 import { useRoom } from "./hooks/useRoom";
+import { useAppUpdate } from "./hooks/useAppUpdate";
 import { useTheme } from "./hooks/useTheme";
 import { AccessGatePage } from "./pages/AccessGatePage";
 import { HomePage } from "./pages/HomePage";
@@ -16,6 +17,7 @@ import { RoomPage } from "./pages/RoomPage";
 export function App() {
   const room = useRoom();
   const { theme, toggle: toggleTheme } = useTheme();
+  const { updateAvailable, reload } = useAppUpdate();
   const hashCode = useRoomCodeFromHash();
 
   // Mantiene la URL alineada con la sala activa para que el enlace sea compartible.
@@ -24,6 +26,15 @@ export function App() {
   }, [room.state, hashCode]);
 
   const busy = room.status === "connecting" || room.status === "starting-server";
+
+  const updateBanner = updateAvailable ? (
+    <div className="update-banner" role="status">
+      <span>Hay una versión nueva de Planincito.</span>
+      <button type="button" className="primary" onClick={reload}>
+        Actualizar
+      </button>
+    </div>
+  ) : null;
 
   const feedback = (
     <Toast
@@ -57,6 +68,7 @@ export function App() {
           onSubmit={room.submitAccessSecret}
         />
         {feedback}
+        {updateBanner}
       </>
     );
   }
@@ -64,8 +76,20 @@ export function App() {
   if (room.state) {
     return (
       <>
-        <RoomPage room={room} theme={theme} onToggleTheme={toggleTheme} />
+        <RoomPage
+          room={room}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onLeave={() => {
+            // Sin limpiar el hash quedaba la URL de la sala, así que la vista
+            // de "entrar a esta sala" reemplazaba a la portada y no había
+            // dónde escribir otro código.
+            room.leaveRoom();
+            navigateHome();
+          }}
+        />
         {feedback}
+        {updateBanner}
       </>
     );
   }
@@ -89,6 +113,7 @@ export function App() {
           }}
         />
         {feedback}
+        {updateBanner}
       </>
     );
   }

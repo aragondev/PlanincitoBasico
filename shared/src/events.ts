@@ -28,6 +28,7 @@ export const CLIENT_EVENTS = {
   VOTE_SUBMIT: "vote:submit",
   VOTE_RETRACT: "vote:retract",
   VOTES_REVEAL: "votes:reveal",
+  REVEAL_COUNTDOWN: "votes:countdown",
   ROUND_RESTART: "round:restart",
   PARTICIPANT_KICK: "participant:kick",
   PARTICIPANT_CHANGE_ROLE: "participant:change-role",
@@ -48,6 +49,7 @@ export const SERVER_EVENTS = {
   SERVER_RESTARTING: "server:restarting",
   ROOM_CLOSED: "room:closed",
   THROWN: "participant:thrown",
+  COUNTDOWN_STARTED: "votes:countdown-started",
 } as const;
 
 export type ClientToServerEvents = {
@@ -69,6 +71,8 @@ export type ClientToServerEvents = {
   /** Retira la carta elegida mientras la ronda siga abierta. */
   [CLIENT_EVENTS.VOTE_RETRACT]: () => void;
   [CLIENT_EVENTS.VOTES_REVEAL]: () => void;
+  /** Avisa a la sala de que la revelación empieza en unos segundos. */
+  [CLIENT_EVENTS.REVEAL_COUNTDOWN]: (payload: { seconds: number }) => void;
   [CLIENT_EVENTS.ROUND_RESTART]: (payload: { topic?: string }) => void;
   [CLIENT_EVENTS.PARTICIPANT_KICK]: (payload: { participantId: string }) => void;
   /** Sin `participantId` cambia el rol propio; con él, el del otro (facilitador). */
@@ -117,6 +121,8 @@ export type ServerToClientEvents = {
   }) => void;
   [SERVER_EVENTS.SERVER_RESTARTING]: (payload: { message: string }) => void;
   [SERVER_EVENTS.ROOM_CLOSED]: (payload: { reason: string }) => void;
+  /** Cuenta atrás antes de revelar; no cambia el estado de la sala. */
+  [SERVER_EVENTS.COUNTDOWN_STARTED]: (payload: { seconds: number }) => void;
   /** No cambia el estado de la sala: es sólo un gesto que se anima. */
   [SERVER_EVENTS.THROWN]: (payload: {
     fromId: string;

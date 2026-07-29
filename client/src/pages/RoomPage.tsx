@@ -15,10 +15,12 @@ export function RoomPage({
   room,
   theme,
   onToggleTheme,
+  onLeave,
 }: {
   room: RoomApi;
   theme: Theme;
   onToggleTheme: () => void;
+  onLeave: () => void;
 }) {
   const { state, myId, isFacilitator } = room;
   const kickTarget = useConfirmation<string>();
@@ -82,7 +84,7 @@ export function RoomPage({
         topic={state.topic}
         canEditTopic={isFacilitator}
         onTopicChange={room.setTopic}
-        onLeave={room.leaveRoom}
+        onLeave={onLeave}
         history={state.history}
         participants={
           <ParticipantList
@@ -110,6 +112,7 @@ export function RoomPage({
           onRestart={() => room.restartRound()}
           onThrow={room.throwItem}
           consensus={consensusKey !== null}
+          countdown={room.countdown}
         />
 
         {revealed && state.results && <VotingResults results={state.results} />}

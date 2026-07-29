@@ -84,7 +84,10 @@ function Seat({
             }
           >
             <span className="seat__face seat__face--back" />
-            <span className="seat__face seat__face--front">
+            <span
+              className="seat__face seat__face--front"
+              data-value={vote !== undefined ? cardLabel(vote) : ""}
+            >
               {vote !== undefined ? cardLabel(vote) : ""}
             </span>
           </div>
@@ -115,6 +118,8 @@ type Props = {
   onThrow: (participantId: string, item: Throwable) => void;
   /** Todos coincidieron: se anuncia en la mesa junto al resultado. */
   consensus: boolean;
+  /** Segundos que faltan para revelar, o `null` si no hay cuenta atrás. */
+  countdown: number | null;
 };
 
 export function PokerTable({
@@ -125,6 +130,7 @@ export function PokerTable({
   onRestart,
   onThrow,
   consensus,
+  countdown,
 }: Props) {
   const revealed = state.status === "revealed";
   const others = state.participants.filter((p) => p.participantId !== myId);
@@ -153,35 +159,48 @@ export function PokerTable({
       </ul>
 
       <div className="table__surface">
-        {consensus && (
-          <p className="table__consensus" role="status">
-            ¡Consenso! 🎉
+        {countdown !== null ? (
+          <p
+            key={countdown}
+            className="table__countdown"
+            role="status"
+            aria-label={`Revelando en ${countdown}`}
+          >
+            {countdown}
           </p>
-        )}
-        {isFacilitator ? (
-          revealed ? (
-            <button type="button" className="primary" onClick={onRestart}>
-              Nueva ronda
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="primary"
-              onClick={onReveal}
-              disabled={!anyVote}
-              title={anyVote ? undefined : "Nadie ha votado todavía"}
-            >
-              Revelar cartas
-            </button>
-          )
         ) : (
-          <p className="table__status" aria-live="polite">
-            {revealed
-              ? "Cartas reveladas"
-              : anyVote
-                ? `Votación en curso · ${voted} de ${players.length}`
-                : "Votación en curso"}
-          </p>
+          <>
+            {consensus && (
+              <p className="table__consensus" role="status">
+                ¡Consenso! 🎉
+              </p>
+            )}
+            {isFacilitator ? (
+              revealed ? (
+                <button type="button" className="primary" onClick={onRestart}>
+                  Nueva ronda
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={onReveal}
+                  disabled={!anyVote}
+                  title={anyVote ? undefined : "Nadie ha votado todavía"}
+                >
+                  Revelar cartas
+                </button>
+              )
+            ) : (
+              <p className="table__status" aria-live="polite">
+                {revealed
+                  ? "Cartas reveladas"
+                  : anyVote
+                    ? `Votación en curso · ${voted} de ${players.length}`
+                    : "Votación en curso"}
+              </p>
+            )}
+          </>
         )}
       </div>
 

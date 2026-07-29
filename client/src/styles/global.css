@@ -49,6 +49,13 @@
 
   --scrim: rgb(0 0 0 / 45%);
   --card-back-text: #ffffff;
+
+  --felt: #1f3b30;
+  --felt-hi: #2c5243;
+  --felt-edge: #3d6a58;
+  --felt-rim: rgb(255 255 255 / 4%);
+  --card-face: #f7f5f6;
+  --card-ink: #1c1b1f;
 }
 
 /* Esquema claro: mismo rojo de marca, contraste invertido. */
@@ -76,6 +83,13 @@
 
   --scrim: rgb(32 26 26 / 35%);
   --card-back-text: #ffffff;
+
+  --felt: #1d6b51;
+  --felt-hi: #278365;
+  --felt-edge: #145240;
+  --felt-rim: rgb(255 255 255 / 10%);
+  --card-face: #ffffff;
+  --card-ink: #1c1b1f;
 
   /* En claro las sombras deben ser más suaves para no ensuciar. */
   --elev-1: 0 1px 2px rgb(0 0 0 / 12%), 0 1px 3px 1px rgb(0 0 0 / 6%);
@@ -302,26 +316,74 @@ button.danger {
 
 /* ---------- Inicio ---------- */
 
-.home__intro {
-  margin-block: 1.5rem;
+/* Portada compacta: una sola tarjeta con el alias y las dos acciones. */
+.home {
+  max-inline-size: 400px;
+  margin-inline: auto;
+  padding-block: 3rem;
 }
 
-.home__intro h1 {
-  font-size: 1.6rem;
+.home__title {
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin-block-end: 1rem;
+  padding-inline: 0.25rem;
 }
 
-.home__intro p {
-  color: var(--muted);
-  max-inline-size: 60ch;
+.home__card {
+  gap: 0.5rem;
 }
 
-.home__cards {
-  display: grid;
-  gap: var(--gap);
+.home label:not(.checkbox) {
+  font-size: 0.75rem;
+  margin-bottom: 0.1rem;
+}
+
+.home .checkbox {
+  font-size: 0.85rem;
+  margin-block: 0.35rem 0.15rem;
+}
+
+.home__cta {
+  inline-size: 100%;
+}
+
+/* Separador con la etiqueta centrada sobre la línea. */
+.home__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-block: 0.9rem 0.25rem;
+  color: var(--muted-dim);
+  font-size: 0.75rem;
+}
+
+.home__divider::before,
+.home__divider::after {
+  content: "";
+  flex: 1;
+  block-size: 1px;
+  background: var(--border);
+}
+
+.home__join {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.home__join input {
+  flex: 1;
+  min-inline-size: 0;
+  letter-spacing: 0.1em;
+}
+
+.home__join button {
+  flex: 0 0 auto;
 }
 
 .join {
-  max-inline-size: 420px;
+  max-inline-size: 400px;
   margin: 3rem auto;
 }
 
@@ -569,6 +631,31 @@ button.danger {
   min-block-size: 1px;
 }
 
+.table__countdown {
+  margin: 0;
+  font-size: 3.5rem;
+  font-weight: 300;
+  line-height: 1;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  animation: countdown-tick 0.9s var(--ease);
+}
+
+@keyframes countdown-tick {
+  0% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.75;
+    transform: scale(0.94);
+  }
+}
+
 .table__consensus {
   margin: 0 0 0.75rem;
   padding: 0.35rem 1rem;
@@ -589,16 +676,21 @@ button.danger {
   justify-content: center;
   padding: 1.5rem;
   border-radius: 20px;
-  background: var(--surface-2);
-  border: none;
-  border-radius: var(--radius-xl);
-  box-shadow: var(--elev-3);
+  /* Tapete de fieltro con reborde, como una mesa de estadio. */
+  background:
+    radial-gradient(ellipse at 50% 40%, var(--felt-hi), var(--felt) 78%);
+  border: 6px solid var(--felt-edge);
+  border-radius: 999px;
+  box-shadow:
+    var(--elev-2),
+    inset 0 2px 16px rgb(0 0 0 / 20%);
 }
 
 .table__status {
   margin: 0;
-  color: var(--muted);
+  color: rgb(255 255 255 / 72%);
   text-align: center;
+  font-size: 0.9rem;
 }
 
 .table__surface .primary {
@@ -637,7 +729,7 @@ button.danger {
   inset: 0;
   display: grid;
   place-items: center;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   backface-visibility: hidden;
   font-size: 1.15rem;
   font-weight: 700;
@@ -650,28 +742,53 @@ button.danger {
 
 /* Reverso con textura sólo cuando ya hay voto: así se ve quién votó. */
 .seat__card--voted .seat__face--back {
-  border: none;
+  border: 2px solid var(--card-face);
   box-shadow: var(--elev-2);
   background-color: var(--brand-solid);
   background-image: repeating-linear-gradient(
       45deg,
-      rgb(255 255 255 / 35%) 0 4px,
-      transparent 4px 8px
+      rgb(255 255 255 / 22%) 0 3px,
+      transparent 3px 7px
     ),
     repeating-linear-gradient(
       -45deg,
-      rgb(255 255 255 / 35%) 0 4px,
-      transparent 4px 8px
+      rgb(255 255 255 / 22%) 0 3px,
+      transparent 3px 7px
     );
+  background-clip: padding-box;
 }
 
+/* Cara de la carta: papel claro con el valor repetido en las esquinas,
+   como una carta de verdad. */
 .seat__face--front {
   transform: rotateY(180deg);
-  background: var(--surface-3);
-  border: 1px solid var(--brand);
-  color: var(--text);
+  background: var(--card-face);
+  border: none;
+  color: var(--card-ink);
   box-shadow: var(--elev-2);
   font-weight: 500;
+  font-size: 1.3rem;
+}
+
+.seat__face--front::before,
+.seat__face--front::after {
+  content: attr(data-value);
+  position: absolute;
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: var(--brand-solid);
+  line-height: 1;
+}
+
+.seat__face--front::before {
+  inset-block-start: 4px;
+  inset-inline-start: 4px;
+}
+
+.seat__face--front::after {
+  inset-block-end: 4px;
+  inset-inline-end: 4px;
+  transform: rotate(180deg);
 }
 
 .seat__card--spectator {
@@ -753,7 +870,9 @@ button.danger {
   justify-content: flex-start;
   /* En móvil el mazo se desliza en horizontal en vez de partirse en filas. */
   overflow-x: auto;
-  padding-block: 0.5rem;
+  /* `overflow-x: auto` obliga al navegador a recortar también en vertical:
+     sin este hueco, la carta elegida se corta al elevarse. */
+  padding-block: 1.15rem 0.5rem;
   scrollbar-width: none;
 }
 
@@ -785,12 +904,31 @@ button.danger {
 
 
 
+.deck__card {
+  position: relative;
+}
+
+.deck__card::before {
+  content: attr(data-value);
+  position: absolute;
+  inset-block-start: 4px;
+  inset-inline-start: 5px;
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: var(--muted-dim);
+  line-height: 1;
+}
+
 .deck__card--selected {
   background: var(--brand-container);
   border-color: var(--brand);
   color: var(--on-brand-container);
   transform: translateY(-10px);
   box-shadow: var(--elev-3);
+}
+
+.deck__card--selected::before {
+  color: var(--on-brand-container);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -1146,6 +1284,121 @@ button.danger {
   100% {
     opacity: 0;
     filter: none;
+  }
+}
+
+/* Aviso de versión nueva: sobre todo lo demás, pero sin tapar el mazo. */
+.update-banner {
+  position: fixed;
+  inset-block-start: calc(0.75rem + env(safe-area-inset-top));
+  inset-inline: 0;
+  z-index: 60;
+  inline-size: fit-content;
+  max-inline-size: calc(100% - 2rem);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  border-radius: var(--radius-xl);
+  background: var(--surface-3);
+  color: var(--text);
+  box-shadow: var(--elev-3);
+  font-size: 0.85rem;
+  animation: toast-in 0.24s var(--ease);
+}
+
+.update-banner button {
+  padding: 0.35rem 1rem;
+  min-block-size: 32px;
+  font-size: 0.8rem;
+}
+
+/* ---------- Animaciones de entrada ----------
+   Sólo transform y opacity, que la GPU compone sin recalcular diseño, y
+   siempre de una vez: nada que se repita en bucle mientras se estima. */
+
+.seat {
+  animation: seat-in 0.28s var(--ease) backwards;
+}
+
+@keyframes seat-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.94);
+  }
+}
+
+/* La carta reacciona al recibir el voto, sin animar en bucle. */
+.seat__card--voted .seat__face--back {
+  animation: card-drop 0.32s var(--ease);
+}
+
+@keyframes card-drop {
+  0% {
+    transform: translateY(-10px) rotate(-4deg);
+    opacity: 0.4;
+  }
+  60% {
+    transform: translateY(2px) rotate(1deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+.panel {
+  animation: panel-in 0.24s var(--ease) backwards;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.stat__value {
+  animation: value-in 0.4s var(--ease) backwards;
+}
+
+@keyframes value-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.9);
+  }
+}
+
+.distribution__fill {
+  transform-origin: left center;
+  animation: bar-grow 0.45s var(--ease) backwards;
+}
+
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.toast {
+  animation: toast-in 0.24s var(--ease);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+.dialog {
+  animation: dialog-in 0.2s var(--ease);
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
   }
 }
 

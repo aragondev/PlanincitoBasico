@@ -334,6 +334,13 @@ export class RoomStore extends EventEmitter {
     return room;
   }
 
+  /** Comprueba el mando sin modificar nada; útil para acciones sólo visuales. */
+  requireFacilitatorOf(code: string, participantId: string): Room {
+    const room = this.requireRoom(code);
+    this.requireFacilitator(room, participantId);
+    return room;
+  }
+
   /** Deshace el voto propio; sólo tiene sentido antes de revelar. */
   retractVote(code: string, participantId: string): Room {
     const room = this.requireRoom(code);
