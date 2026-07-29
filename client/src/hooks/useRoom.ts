@@ -54,6 +54,7 @@ export type RoomApi = {
   /** Elegir la misma carta la retira: alternar es el gesto esperado. */
   vote: (value: CardValue) => void;
   reveal: () => void;
+  countdown: number | null;
   restartRound: (topic?: string) => void;
   setTopic: (topic: string) => void;
   kick: (participantId: string) => void;
@@ -90,6 +91,14 @@ export function useRoom(): RoomApi {
    */
   const [booting, setBooting] = useState(() => loadSession() !== null);
   const [flights, setFlights] = useState<Flight[]>([]);
+  /** Segundos que faltan para revelar, o `null` si no hay cuenta atrás. */
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  /**
+   * Temporizador de la revelación, aparte de los tics: el aviso de cuenta
+   * atrás llega también al facilitador y limpiaba su propio disparador.
+   */
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flightId = useRef(0);
 
   if (socketRef.current === null) socketRef.current = createSocket();
@@ -166,7 +175,10 @@ export function useRoom(): RoomApi {
       }
     };
 
-    const onState = (payload: { state: PublicRoomState }) => setState(payload.state);
+    const onState = (payload: { state: PublicRoomState }) => {
+      if (payload.state.status === "revealed") setCountdown(null);
+      setState(payload.state);
+    };
 
     const onError = (payload: RoomError) => {
       setBooting(false);
@@ -201,6 +213,18 @@ export function useRoom(): RoomApi {
       setStatus("room-gone");
     };
 
+    const onCountdown = ({ seconds }: { seconds: number }) => {
+      for (const timer of countdownTimers.current) clearTimeout(timer);
+      countdownTimers.current = [];
+      setCountdown(seconds);
+      // Un tic por segundo; el último deja el contador listo para el reveal.
+      for (let step = 1; step <= seconds; step += 1) {
+        countdownTimers.current.push(
+          setTimeout(() => setCountdown(seconds - step || null), step * 1000),
+        );
+      }
+    };
+
     const onThrown = (payload: {
       fromId: string;
       fromAlias: string;
@@ -216,6 +240,7 @@ export function useRoom(): RoomApi {
     const onRestarting = (payload: { message: string }) => setNotice(payload.message);
 
     const onRoundRestarted = (payload: { state: PublicRoomState }) => {
+      setCountdown(null);
       setMyVote(undefined);
       setState(payload.state);
     };
@@ -235,11 +260,14 @@ export function useRoom(): RoomApi {
     socket.on(SERVER_EVENTS.ROOM_CLOSED, onClosed);
     socket.on(SERVER_EVENTS.SERVER_RESTARTING, onRestarting);
     socket.on(SERVER_EVENTS.THROWN, onThrown);
+    socket.on(SERVER_EVENTS.COUNTDOWN_STARTED, onCountdown);
 
     return () => {
       socket.removeAllListeners();
       socket.disconnect();
       if (coldStartTimer.current) clearTimeout(coldStartTimer.current);
+      if (revealTimer.current) clearTimeout(revealTimer.current);
+      for (const timer of countdownTimers.current) clearTimeout(timer);
     };
   }, [socket, dispatchIntent, armColdStartTimer]);
 
@@ -317,6 +345,10 @@ export function useRoom(): RoomApi {
     state?.participants.find((participant) => participant.participantId === myId)?.vote;
 
   const reset = useCallback(() => {
+    if (revealTimer.current) clearTimeout(revealTimer.current);
+    for (const timer of countdownTimers.current) clearTimeout(timer);
+    countdownTimers.current = [];
+    setCountdown(null);
     clearSession();
     setAccessRejected(false);
     setBooting(false);
@@ -359,7 +391,16 @@ export function useRoom(): RoomApi {
         setMyVote(value);
         emit(CLIENT_EVENTS.VOTE_SUBMIT, { value });
       },
-      reveal: () => emit(CLIENT_EVENTS.VOTES_REVEAL),
+      reveal: () => {
+        const seconds = 3;
+        if (revealTimer.current) clearTimeout(revealTimer.current);
+        emit(CLIENT_EVENTS.REVEAL_COUNTDOWN, { seconds });
+        revealTimer.current = setTimeout(
+          () => emit(CLIENT_EVENTS.VOTES_REVEAL),
+          seconds * 1000,
+        );
+      },
+      countdown,
       restartRound: (topic) => emit(CLIENT_EVENTS.ROUND_RESTART, { topic }),
       setTopic: (topic) => emit(CLIENT_EVENTS.TOPIC_UPDATE, { topic }),
       kick: (participantId) =>
@@ -381,7 +422,7 @@ export function useRoom(): RoomApi {
     [
       status, state, credentials, error, notice, accessRejected, booting,
       myId, isFacilitator,
-      effectiveVote, flights, start, emit, submitAccessSecret, reset,
+      effectiveVote, flights, countdown, start, emit, submitAccessSecret, reset,
     ],
   );
 }

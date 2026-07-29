@@ -3,6 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Los assets llevan hash en el nombre, pero este documento no: sin esto
+         el navegador puede servir durante horas una versión ya sustituida. -->
+    <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
     <meta
       name="description"
       content="Planning Poker temporal en tiempo real para equipos de hasta 8 personas."

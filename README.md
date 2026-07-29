@@ -105,6 +105,13 @@ en curso, los márgenes son amplios:
 
 Salir con el botón *Salir* es inmediato y no espera ningún margen.
 
+## Cuenta atrás al revelar
+
+Al pulsar *Revelar cartas* la sala ve un 3-2-1 sincronizado antes de que las
+cartas se volteen. El facilitador anuncia la cuenta al servidor, que la difunde,
+y es él quien revela al terminar; si algo falla, la cuenta desaparece sola en
+cuanto llega el estado revelado.
+
 ## Tema claro y oscuro
 
 Arranca siguiendo la preferencia del sistema y se cambia con el botón del

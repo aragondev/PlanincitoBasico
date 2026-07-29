@@ -10,6 +10,10 @@ type Props = {
   onJoin: (code: string, alias: string) => void;
 };
 
+/**
+ * Un solo alias para las dos acciones: antes había un campo por formulario y
+ * una nota pidiendo repetirlo, que sobra si el dato se pide una vez.
+ */
 export function HomePage({ status, busy, onCreate, onJoin }: Props) {
   const [alias, setAlias] = useState("");
   const [code, setCode] = useState("");
@@ -17,79 +21,78 @@ export function HomePage({ status, busy, onCreate, onJoin }: Props) {
 
   const trimmedAlias = alias.trim();
   const normalizedCode = code.trim().toUpperCase();
+  const codeReady = normalizedCode.length === LIMITS.ROOM_CODE_LENGTH;
 
   return (
     <main className="home">
-      <section className="home__intro">
-        <h1>Planincito</h1>
-      </section>
+      <h1 className="home__title">Planincito</h1>
 
-      <div className="home__cards">
-        <form
-          className="panel"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onCreate(trimmedAlias, asSpectator);
-          }}
-        >
-          <h2 className="panel__title">Crear una sala</h2>
-          <label htmlFor="alias">Tu alias</label>
+      <div className="panel home__card">
+        <label htmlFor="alias">Tu alias</label>
+        <input
+          id="alias"
+          type="text"
+          value={alias}
+          maxLength={LIMITS.MAX_ALIAS_LENGTH}
+          autoComplete="nickname"
+          autoFocus
+          placeholder="Ana"
+          onChange={(event) => setAlias(event.target.value)}
+        />
+
+        <label className="checkbox">
           <input
-            id="alias"
-            type="text"
-            value={alias}
-            maxLength={LIMITS.MAX_ALIAS_LENGTH}
-            autoComplete="nickname"
-            placeholder="Ana"
-            onChange={(event) => setAlias(event.target.value)}
+            type="checkbox"
+            checked={asSpectator}
+            onChange={(event) => setAsSpectator(event.target.checked)}
           />
-          <label className="checkbox">
-            <input
-              type="checkbox"
-              checked={asSpectator}
-              onChange={(event) => setAsSpectator(event.target.checked)}
-            />
-            Entrar como espectador (no vota)
-          </label>
+          Entrar como espectador
+        </label>
 
-          <button type="submit" className="primary" disabled={!trimmedAlias || busy}>
-            Crear sala
-          </button>
-        </form>
+        <button
+          type="button"
+          className="primary home__cta"
+          disabled={!trimmedAlias || busy}
+          onClick={() => onCreate(trimmedAlias, asSpectator)}
+        >
+          Crear sala
+        </button>
+
+        <p className="home__divider">
+          <span>o entra con un código</span>
+        </p>
 
         <form
-          className="panel"
+          className="home__join"
           onSubmit={(event) => {
             event.preventDefault();
             onJoin(normalizedCode, trimmedAlias);
           }}
         >
-          <h2 className="panel__title">Entrar con un código</h2>
-          <label htmlFor="code">Código de la sala</label>
           <input
-            id="code"
             type="text"
             value={code}
             maxLength={LIMITS.ROOM_CODE_LENGTH}
             inputMode="text"
             autoCapitalize="characters"
+            autoComplete="off"
             placeholder="ABC123"
+            aria-label="Código de la sala"
             onChange={(event) => setCode(event.target.value.toUpperCase())}
           />
           <button
             type="submit"
             className="secondary"
-            disabled={
-              !trimmedAlias || normalizedCode.length !== LIMITS.ROOM_CODE_LENGTH || busy
-            }
+            disabled={!trimmedAlias || !codeReady || busy}
           >
             Entrar
           </button>
-          <p className="muted">Usa el mismo alias del formulario anterior.</p>
         </form>
       </div>
 
-      {status !== "idle" && <ConnectionStatus status={status} />}
+      {status !== "idle" && status !== "connected" && (
+        <ConnectionStatus status={status} />
+      )}
     </main>
   );
 }

@@ -21,6 +21,7 @@ export function CardDeck({ selected, disabled, hint, onSelect }: Props) {
             className={`deck__card${selected === value ? " deck__card--selected" : ""}`}
             aria-pressed={selected === value}
             aria-label={cardAriaLabel(value)}
+            data-value={cardLabel(value)}
             disabled={disabled}
             onClick={() => onSelect(value)}
           >

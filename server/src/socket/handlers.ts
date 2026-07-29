@@ -252,6 +252,17 @@ export function registerSocketHandlers(
     );
 
     socket.on(
+      CLIENT_EVENTS.REVEAL_COUNTDOWN,
+      guard(socket, (payload) => {
+        const { code, participantId } = context(socket);
+        // Sólo el facilitador revela, así que sólo él puede iniciar la cuenta.
+        const room = store.requireFacilitatorOf(code, participantId);
+        const seconds = Math.min(Math.max(Number(payload?.seconds) || 3, 1), 5);
+        io.to(room.code).emit(SERVER_EVENTS.COUNTDOWN_STARTED, { seconds });
+      }),
+    );
+
+    socket.on(
       CLIENT_EVENTS.VOTES_REVEAL,
       guard(socket, () => {
         const { code, participantId } = context(socket);
