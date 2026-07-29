@@ -116,8 +116,6 @@ type Props = {
   onReveal: () => void;
   onRestart: () => void;
   onThrow: (participantId: string, item: Throwable) => void;
-  /** Todos coincidieron: se anuncia en la mesa junto al resultado. */
-  consensus: boolean;
   /** Segundos que faltan para revelar, o `null` si no hay cuenta atrás. */
   countdown: number | null;
 };
@@ -129,7 +127,6 @@ export function PokerTable({
   onReveal,
   onRestart,
   onThrow,
-  consensus,
   countdown,
 }: Props) {
   const revealed = state.status === "revealed";
@@ -170,11 +167,6 @@ export function PokerTable({
           </p>
         ) : (
           <>
-            {consensus && (
-              <p className="table__consensus" role="status">
-                ¡Consenso! 🎉
-              </p>
-            )}
             {isFacilitator ? (
               revealed ? (
                 <button type="button" className="primary" onClick={onRestart}>

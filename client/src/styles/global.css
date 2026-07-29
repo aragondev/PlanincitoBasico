@@ -23,73 +23,79 @@
   --gap: 1rem;
 }
 
-/* Esquema oscuro (por defecto). */
+/* Esquema oscuro: sala de casino. Verdes de tapete para las superficies,
+   oro para las acciones y el rojo de la baraja —que además es el de Dismac—
+   para los acentos. */
 :root,
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #131316;
-  --surface: #1a1a1e;
-  --surface-1: #212127;
-  --surface-2: #26262d;
-  --surface-3: #2c2c34;
-  --border: #46464f;
-  --text: #e5e2e4;
-  --muted: #cac4cd;
-  --muted-dim: #948f99;
+  --bg: #0b1712;
+  --surface: #10201a;
+  --surface-1: #142720;
+  --surface-2: #1a3128;
+  --surface-3: #204035;
+  --border: #2f5546;
+  --text: #f0ece2;
+  --muted: #c3c9bf;
+  --muted-dim: #8d9a90;
 
-  --brand: #ffb3ae;
-  --brand-container: #93000d;
-  --on-brand-container: #ffdad6;
-  --brand-solid: #ec1f26;
-  --brand-solid-hover: #c4141a;
+  --brand: #e8c56a;
+  --brand-container: #6b4e10;
+  --on-brand-container: #f7e2ab;
+  --brand-solid: #d4a63c;
+  --brand-solid-hover: #b98c26;
+  --on-brand-solid: #241a00;
 
   --ok: #5acd98;
   --warn: #fbdf2d;
-  --danger: #ffb4ab;
+  --danger: #ff8a80;
 
-  --scrim: rgb(0 0 0 / 45%);
+  --scrim: rgb(0 0 0 / 55%);
   --card-back-text: #ffffff;
 
-  --felt: #1f3b30;
-  --felt-hi: #2c5243;
-  --felt-edge: #3d6a58;
-  --felt-rim: rgb(255 255 255 / 4%);
-  --card-face: #f7f5f6;
-  --card-ink: #1c1b1f;
+  --felt: #14432f;
+  --felt-hi: #1c5c40;
+  --felt-edge: #7a5a22;
+  --felt-rim: rgb(255 255 255 / 5%);
+  --card-face: #f7f4ec;
+  --card-ink: #16130c;
+  --card-red: #c8102e;
 }
 
-/* Esquema claro: mismo rojo de marca, contraste invertido. */
+/* Esquema claro: marfil de ficha con verde y oro. */
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #fdf8f7;
-  --surface: #ffffff;
-  --surface-1: #f8f1f0;
-  --surface-2: #f3eae9;
-  --surface-3: #ece2e1;
-  --border: #d8c2c0;
-  --text: #201a1a;
-  --muted: #534342;
-  --muted-dim: #857372;
+  --bg: #f6f3e9;
+  --surface: #fffdf6;
+  --surface-1: #f4f1e5;
+  --surface-2: #ebe7d8;
+  --surface-3: #e0dcca;
+  --border: #cbc6b2;
+  --text: #1b1c18;
+  --muted: #45483f;
+  --muted-dim: #75786d;
 
-  --brand: #b3261e;
-  --brand-container: #ffdad6;
-  --on-brand-container: #410002;
-  --brand-solid: #ec1f26;
-  --brand-solid-hover: #c4141a;
+  --brand: #7a5a09;
+  --brand-container: #f7e2ab;
+  --on-brand-container: #241a00;
+  --brand-solid: #a8801c;
+  --brand-solid-hover: #8a6812;
+  --on-brand-solid: #ffffff;
 
   --ok: #1f8a5f;
   --warn: #8a6d00;
   --danger: #ba1a1a;
 
-  --scrim: rgb(32 26 26 / 35%);
+  --scrim: rgb(27 28 24 / 40%);
   --card-back-text: #ffffff;
 
   --felt: #1d6b51;
   --felt-hi: #278365;
-  --felt-edge: #145240;
+  --felt-edge: #a8801c;
   --felt-rim: rgb(255 255 255 / 10%);
   --card-face: #ffffff;
-  --card-ink: #1c1b1f;
+  --card-ink: #16130c;
+  --card-red: #c8102e;
 
   /* En claro las sombras deben ser más suaves para no ensuciar. */
   --elev-1: 0 1px 2px rgb(0 0 0 / 12%), 0 1px 3px 1px rgb(0 0 0 / 6%);
@@ -219,7 +225,7 @@ button:disabled {
 
 button.primary {
   background: var(--brand-solid);
-  color: #ffffff;
+  color: var(--on-brand-solid);
   box-shadow: var(--elev-1);
 }
 
@@ -744,7 +750,7 @@ button.danger {
 .seat__card--voted .seat__face--back {
   border: 2px solid var(--card-face);
   box-shadow: var(--elev-2);
-  background-color: var(--brand-solid);
+  background-color: var(--card-red);
   background-image: repeating-linear-gradient(
       45deg,
       rgb(255 255 255 / 22%) 0 3px,
@@ -776,7 +782,7 @@ button.danger {
   position: absolute;
   font-size: 0.5rem;
   font-weight: 700;
-  color: var(--brand-solid);
+  color: var(--card-red);
   line-height: 1;
 }
 
@@ -998,6 +1004,11 @@ button.danger {
   block-size: 100%;
   background: var(--brand-solid);
   border-radius: 999px;
+}
+
+/* Ficha de casino: el contador de cada panel lateral. */
+.drawer__badge {
+  border: 1px dashed var(--brand);
 }
 
 .distribution__count {

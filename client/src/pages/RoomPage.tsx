@@ -111,7 +111,6 @@ export function RoomPage({
           onReveal={room.reveal}
           onRestart={() => room.restartRound()}
           onThrow={room.throwItem}
-          consensus={consensusKey !== null}
           countdown={room.countdown}
         />
 
