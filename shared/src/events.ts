@@ -94,11 +94,16 @@ export type ServerToClientEvents = {
   [SERVER_EVENTS.ROOM_CREATED]: (payload: {
     credentials: SessionCredentials;
     state: PublicRoomState;
+    yourVote?: CardValue;
   }) => void;
-  /** `credentials` sólo viaja en el mensaje dirigido al propio participante. */
+  /**
+   * `credentials` y `yourVote` sólo viajan en el mensaje dirigido al propio
+   * participante: así recupera su carta al volver sin destapársela a nadie.
+   */
   [SERVER_EVENTS.ROOM_STATE]: (payload: {
     credentials?: SessionCredentials;
     state: PublicRoomState;
+    yourVote?: CardValue;
   }) => void;
   [SERVER_EVENTS.ROOM_ERROR]: (payload: RoomError) => void;
   [SERVER_EVENTS.PARTICIPANT_JOINED]: (payload: {

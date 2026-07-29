@@ -142,6 +142,20 @@ Es un gesto puramente visual: no toca el estado de la sala ni queda registrado.
 El servidor sólo comprueba que la persona siga dentro, no sea espectador y no
 haya votado todavía.
 
+## Identidad temporal
+
+Al entrar, el navegador guarda en `localStorage` el código de la sala, un
+identificador y un token de reconexión. Con eso se recupera el mismo asiento
+—rol y carta incluidos— tras recargar **o tras cerrar y reabrir la pestaña**.
+
+No es una cuenta: son credenciales de una sala concreta que dejan de servir en
+cuanto esa sala desaparece. El plan (§9) proponía `sessionStorage`, pero el
+navegador lo borra al cerrar la pestaña y quien volvía entraba como participante
+nuevo, dejando su asiento anterior de fantasma.
+
+Si la misma sala se abre en dos pestañas, la última releva a la anterior: dos
+conexiones con la misma identidad dejarían un duplicado irresoluble.
+
 ## Historial de rondas
 
 Cada ronda revelada queda registrada con su tema, sus estadísticas y la carta de

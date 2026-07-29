@@ -266,6 +266,32 @@ describe("reconexión y facilitador", () => {
     expect(state.facilitatorId).toBe(host.credentials.participantId);
   });
 
+  it("una segunda conexión con el mismo token releva a la primera", async () => {
+    const host = await createRoom("Ana");
+    await joinRoom(host.credentials.roomCode, "Bea");
+
+    // Simula cerrar la pestaña y volver a abrirla: mismo token, socket nuevo.
+    const revived = connect();
+    const relevada = waitFor<{ reason: string }>(
+      host.socket,
+      SERVER_EVENTS.ROOM_CLOSED,
+    );
+    const restored = waitFor<Entered>(revived, SERVER_EVENTS.ROOM_STATE);
+    revived.emit(CLIENT_EVENTS.ROOM_RECONNECT, host.credentials);
+
+    const state = (await restored).state;
+    expect((await relevada).reason).toMatch(/otra pestaña/i);
+
+    // Un solo asiento, no dos: nada de participantes duplicados.
+    expect(state.participants).toHaveLength(2);
+    expect(
+      state.participants.filter(
+        (p) => p.participantId === host.credentials.participantId,
+      ),
+    ).toHaveLength(1);
+    expect(state.facilitatorId).toBe(host.credentials.participantId);
+  });
+
   it("transfiere el facilitador cuando no regresa y avisa a los demás", async () => {
     const host = await createRoom("Ana");
     const guest = await joinRoom(host.credentials.roomCode, "Bea");

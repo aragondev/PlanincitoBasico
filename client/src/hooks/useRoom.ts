@@ -162,12 +162,15 @@ export function useRoom(): RoomApi {
     const onEntered = (payload: {
       credentials?: SessionCredentials;
       state: PublicRoomState;
+      yourVote?: CardValue;
     }) => {
       setBooting(false);
       // Si llegamos a entrar, la frase usada era válida: recién ahora se guarda.
       persistAccessSecret();
       setAccessRejected(false);
       triedSecretRef.current = false;
+      // Al reconectar el servidor nos devuelve nuestra carta: la restauramos.
+      if (payload.yourVote !== undefined) setMyVote(payload.yourVote);
       setState(payload.state);
       setStatus("connected");
       if (payload.credentials) {
