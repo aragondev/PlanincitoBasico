@@ -390,6 +390,11 @@ export class RoomStore extends EventEmitter {
     if (room.history.length > max) room.history.length = max;
   }
 
+  /** Última ronda archivada, para difundirla suelta al revelar. */
+  lastHistoryEntry(room: Room): RoundHistoryEntry | undefined {
+    return room.history[0];
+  }
+
   restartRound(code: string, participantId: string, topic?: string): Room {
     const room = this.requireRoom(code);
     this.requireFacilitator(room, participantId);
@@ -597,7 +602,6 @@ export class RoomStore extends EventEmitter {
       facilitatorId: room.facilitatorId,
       participants,
       results: revealed ? computeResults(room.votes.values()) : null,
-      history: room.history,
       maxParticipants: this.options.maxParticipantsPerRoom,
     };
   }

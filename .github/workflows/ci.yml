@@ -15,5 +15,27 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # Unitarias e integración de servidor, y las del hook del cliente.
       - run: npm run test
       - run: npm run build
+
+  end-to-end:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      # Navegador real contra backend y frontend reales: aquí aparecen los
+      # fallos que las pruebas de servidor no pueden ver.
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-trace
+          path: test-results/
+          retention-days: 5

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { RoundHistoryEntry } from "@planincito/shared";
+import { CloseIcon, HistoryIcon } from "./Icon";
 import { cardLabel } from "./PokerCard";
 
 function Entry({ entry }: { entry: RoundHistoryEntry }) {
@@ -55,6 +57,7 @@ function Entry({ entry }: { entry: RoundHistoryEntry }) {
  */
 export function RoundHistory({ history }: { history: RoundHistoryEntry[] }) {
   const [open, setOpen] = useState(false);
+  const panelRef = useFocusTrap<HTMLElement>(open);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -76,7 +79,7 @@ export function RoundHistory({ history }: { history: RoundHistoryEntry[] }) {
         aria-expanded={open}
         onClick={() => setOpen(true)}
       >
-        <span aria-hidden="true">🕘</span>
+        <HistoryIcon />
         <span className="drawer__toggle-label">Historial</span>
         <span className="drawer__badge">{history.length}</span>
       </button>
@@ -88,6 +91,7 @@ export function RoundHistory({ history }: { history: RoundHistoryEntry[] }) {
           onClick={() => setOpen(false)}
         >
           <aside
+            ref={panelRef}
             className="drawer"
             role="dialog"
             aria-modal="true"
@@ -102,7 +106,7 @@ export function RoundHistory({ history }: { history: RoundHistoryEntry[] }) {
                 aria-label="Cerrar historial"
                 onClick={() => setOpen(false)}
               >
-                ✕
+                <CloseIcon />
               </button>
             </header>
 

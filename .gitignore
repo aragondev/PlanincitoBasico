@@ -8,4 +8,6 @@ dist/
 .env.local
 .DS_Store
 coverage/
+test-results/
+playwright-report/
 .vite/

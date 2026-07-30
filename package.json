@@ -13,11 +13,13 @@
     "build": "npm run build --workspace server && npm run build --workspace client",
     "build:server": "npm run build --workspace server",
     "build:client": "npm run build --workspace client",
-    "test": "npm run test --workspace server",
+    "test": "npm run test --workspace server && npm run test --workspace client",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "1.49",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.0",

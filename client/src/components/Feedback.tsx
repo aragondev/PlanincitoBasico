@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
+import { CloseIcon } from "./Icon";
 
 type ToastProps = {
   message: string | null;
@@ -18,8 +20,13 @@ export function Toast({ message, tone = "info", onDismiss }: ToastProps) {
   return (
     <div className={`toast toast--${tone}`} role="alert">
       <span>{message}</span>
-      <button type="button" aria-label="Cerrar aviso" onClick={onDismiss}>
-        ×
+      <button
+        type="button"
+        className="md-icon-button"
+        aria-label="Cerrar aviso"
+        onClick={onDismiss}
+      >
+        <CloseIcon />
       </button>
     </div>
   );
@@ -38,6 +45,8 @@ export function ConfirmationDialog({
   onConfirm,
   onCancel,
 }: ConfirmationProps) {
+  const dialogRef = useFocusTrap<HTMLDivElement>(true);
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onCancel();
@@ -49,6 +58,7 @@ export function ConfirmationDialog({
   return (
     <div className="dialog__backdrop" role="presentation" onClick={onCancel}>
       <div
+        ref={dialogRef}
         className="dialog"
         role="alertdialog"
         aria-modal="true"

@@ -103,11 +103,13 @@ export function registerSocketHandlers(
     void socket.join(room.code);
 
     const state = store.buildPublicState(room);
-    // La carta propia viaja sólo a su dueño, para que la recupere al volver.
+    // La carta propia y el historial completo viajan sólo a su destinatario:
+    // reenviar el historial en cada difusión multiplicaba el tráfico por 25.
     socket.emit(event, {
       credentials: credentialsFor(room, participant),
       state,
       yourVote: room.votes.get(participant.id),
+      history: room.history,
     });
     socket.to(room.code).emit(SERVER_EVENTS.PARTICIPANT_JOINED, {
       participant:
@@ -287,6 +289,7 @@ export function registerSocketHandlers(
         const room = store.reveal(code, participantId);
         io.to(room.code).emit(SERVER_EVENTS.VOTES_REVEALED, {
           state: store.buildPublicState(room),
+          entry: store.lastHistoryEntry(room),
         });
       }),
     );
