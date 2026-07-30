@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
+import { read, write } from "../socket/storage";
 
 export type Theme = "light" | "dark";
 
 const KEY = "planincito:theme";
 
 function preferred(): Theme {
-  try {
-    const saved = localStorage.getItem(KEY);
-    if (saved === "light" || saved === "dark") return saved;
-  } catch {
-    // Modo privado: se decide por la preferencia del sistema.
-  }
+  const saved = read(KEY);
+  if (saved === "light" || saved === "dark") return saved;
   return window.matchMedia("(prefers-color-scheme: light)").matches
     ? "light"
     : "dark";
@@ -28,11 +25,8 @@ export function useTheme(): { theme: Theme; toggle: () => void } {
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: light)");
     const onChange = (event: MediaQueryListEvent) => {
-      try {
-        if (localStorage.getItem(KEY)) return;
-      } catch {
-        // Sin almacenamiento seguimos al sistema igualmente.
-      }
+      // Una elección manual manda sobre el sistema.
+      if (read(KEY)) return;
       setTheme(event.matches ? "light" : "dark");
     };
     media.addEventListener("change", onChange);
@@ -42,11 +36,7 @@ export function useTheme(): { theme: Theme; toggle: () => void } {
   const toggle = useCallback(() => {
     setTheme((current) => {
       const next = current === "dark" ? "light" : "dark";
-      try {
-        localStorage.setItem(KEY, next);
-      } catch {
-        // La elección durará sólo esta visita.
-      }
+      write(KEY, next);
       return next;
     });
   }, []);

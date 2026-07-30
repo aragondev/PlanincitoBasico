@@ -1,4 +1,5 @@
 import type { SessionCredentials } from "@planincito/shared";
+import { readJson, remove, write } from "./storage";
 
 const KEY = "planincito:session";
 
@@ -12,34 +13,17 @@ const KEY = "planincito:session";
  * servir en cuanto esa sala desaparece.
  */
 export function loadSession(): SessionCredentials | null {
-  try {
-    // Se lee también el almacén antiguo para no perder sesiones en curso.
-    const raw =
-      localStorage.getItem(KEY) ?? sessionStorage.getItem(KEY) ?? null;
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<SessionCredentials>;
-    if (!parsed.roomCode || !parsed.participantId || !parsed.reconnectionToken) {
-      return null;
-    }
-    return parsed as SessionCredentials;
-  } catch {
+  const parsed = readJson<Partial<SessionCredentials>>(KEY);
+  if (!parsed?.roomCode || !parsed.participantId || !parsed.reconnectionToken) {
     return null;
   }
+  return parsed as SessionCredentials;
 }
 
 export function saveSession(credentials: SessionCredentials): void {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(credentials));
-  } catch {
-    // Modo privado o almacenamiento lleno: seguimos sin poder reconectar.
-  }
+  write(KEY, JSON.stringify(credentials));
 }
 
 export function clearSession(): void {
-  try {
-    localStorage.removeItem(KEY);
-    sessionStorage.removeItem(KEY);
-  } catch {
-    // Ignorado a propósito.
-  }
+  remove(KEY);
 }

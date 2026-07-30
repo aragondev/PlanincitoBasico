@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { useFocusTrap } from "../hooks/useFocusTrap";
+import { useState } from "react";
 import type { RoundHistoryEntry } from "@planincito/shared";
-import { CloseIcon, HistoryIcon } from "./Icon";
+import { Drawer } from "./Drawer";
+import { HistoryIcon } from "./Icon";
 import { cardLabel } from "./PokerCard";
 
 function Entry({ entry }: { entry: RoundHistoryEntry }) {
@@ -56,72 +56,20 @@ function Entry({ entry }: { entry: RoundHistoryEntry }) {
  * desplazarse perdiendo de vista la mesa. Vive con la sala y muere con ella.
  */
 export function RoundHistory({ history }: { history: RoundHistoryEntry[] }) {
-  const [open, setOpen] = useState(false);
-  const panelRef = useFocusTrap<HTMLElement>(open);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
-
   if (history.length === 0) return null;
 
   return (
-    <>
-      <button
-        type="button"
-        className="md-button--text drawer__toggle"
-        aria-label="Historial"
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
-      >
-        <HistoryIcon />
-        <span className="drawer__toggle-label">Historial</span>
-        <span className="drawer__badge">{history.length}</span>
-      </button>
-
-      {open && (
-        <div
-          className="drawer__scrim"
-          role="presentation"
-          onClick={() => setOpen(false)}
-        >
-          <aside
-            ref={panelRef}
-            className="drawer"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Historial de rondas"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header className="drawer__header">
-              <h2>Historial</h2>
-              <button
-                type="button"
-                className="md-icon-button"
-                aria-label="Cerrar historial"
-                onClick={() => setOpen(false)}
-              >
-                <CloseIcon />
-              </button>
-            </header>
-
-            <p className="muted drawer__note">
-              Sólo durante esta sesión: si la sala se cierra, se pierde.
-            </p>
-
-            <ul className="history">
-              {history.map((entry) => (
-                <Entry key={entry.round} entry={entry} />
-              ))}
-            </ul>
-          </aside>
-        </div>
-      )}
-    </>
+    <Drawer
+      title="Historial"
+      icon={<HistoryIcon />}
+      badge={history.length}
+      note="Sólo durante esta sesión: si la sala se cierra, se pierde."
+    >
+      <ul className="history">
+        {history.map((entry) => (
+          <Entry key={entry.round} entry={entry} />
+        ))}
+      </ul>
+    </Drawer>
   );
 }
