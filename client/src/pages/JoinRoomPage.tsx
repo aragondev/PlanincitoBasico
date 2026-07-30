@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { LIMITS } from "@planincito/shared";
 import { ConnectionStatus } from "../components/ConnectionStatus";
+import { loadLastAlias } from "../socket/lastAlias";
 import type { ConnectionStatus as Status } from "../hooks/useRoom";
 
 type Props = {
@@ -20,7 +21,7 @@ export function JoinRoomPage({
   onJoin,
   onBack,
 }: Props) {
-  const [alias, setAlias] = useState("");
+  const [alias, setAlias] = useState(loadLastAlias);
   const [asSpectator, setAsSpectator] = useState(false);
   const trimmed = alias.trim();
 
@@ -44,7 +45,7 @@ export function JoinRoomPage({
           value={alias}
           maxLength={LIMITS.MAX_ALIAS_LENGTH}
           autoComplete="nickname"
-          autoFocus
+          autoFocus={!alias}
           placeholder="Ana"
           onChange={(event) => setAlias(event.target.value)}
         />

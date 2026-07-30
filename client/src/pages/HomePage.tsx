@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { LIMITS } from "@planincito/shared";
 import { ConnectionStatus } from "../components/ConnectionStatus";
+import { loadLastAlias } from "../socket/lastAlias";
 import type { ConnectionStatus as Status } from "../hooks/useRoom";
 
 type Props = {
@@ -25,7 +26,8 @@ export function HomePage({
   onCreate,
   onJoin,
 }: Props) {
-  const [alias, setAlias] = useState("");
+  // Se precarga el último alias usado: en un equipo se repite siempre.
+  const [alias, setAlias] = useState(loadLastAlias);
   const [code, setCode] = useState("");
   const [asSpectator, setAsSpectator] = useState(false);
   const [aliasMissing, setAliasMissing] = useState(false);
@@ -62,7 +64,7 @@ export function HomePage({
           value={alias}
           maxLength={LIMITS.MAX_ALIAS_LENGTH}
           autoComplete="nickname"
-          autoFocus
+          autoFocus={!alias}
           placeholder="Ana"
           aria-invalid={aliasMissing}
           aria-describedby={aliasMissing ? "alias-error" : undefined}
