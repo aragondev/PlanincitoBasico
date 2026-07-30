@@ -176,6 +176,9 @@ export function PokerTable({
   const players = state.participants.filter((p) => p.role !== "spectator");
   const voted = players.filter((p) => p.hasVoted).length;
   const anyVote = voted > 0;
+  // Estimar en solitario no compara nada: el servidor exige un mínimo.
+  const enoughPlayers = players.length >= state.minPlayersToReveal;
+  const canReveal = anyVote && enoughPlayers;
 
   return (
     <section className="table" aria-label="Mesa">
@@ -204,6 +207,12 @@ export function PokerTable({
         ) : (
           <>
             {results && <ResultsSummary results={results} />}
+            {!revealed && !enoughPlayers && (
+              <p className="table__status">
+                Comparte el enlace: hacen falta al menos{" "}
+                {state.minPlayersToReveal} jugadores.
+              </p>
+            )}
             {isFacilitator ? (
               revealed ? (
                 <button type="button" className="primary" onClick={onRestart}>
@@ -214,8 +223,14 @@ export function PokerTable({
                   type="button"
                   className="primary"
                   onClick={onReveal}
-                  disabled={!anyVote}
-                  title={anyVote ? undefined : "Nadie ha votado todavía"}
+                  disabled={!canReveal}
+                  title={
+                    enoughPlayers
+                      ? anyVote
+                        ? undefined
+                        : "Nadie ha votado todavía"
+                      : `Hacen falta al menos ${state.minPlayersToReveal} jugadores`
+                  }
                 >
                   Revelar cartas
                 </button>
@@ -224,9 +239,11 @@ export function PokerTable({
               <p className="table__status" aria-live="polite">
                 {revealed
                   ? "Cartas reveladas"
-                  : anyVote
-                    ? `Votación en curso · ${voted} de ${players.length}`
-                    : "Votación en curso"}
+                  : !enoughPlayers
+                    ? "Esperando a que se una alguien más…"
+                    : anyVote
+                      ? `Votación en curso · ${voted} de ${players.length}`
+                      : "Votación en curso"}
               </p>
             )}
           </>

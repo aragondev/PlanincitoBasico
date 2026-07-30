@@ -53,6 +53,7 @@ export function createApp(config: Config = defaultConfig): App {
     disconnectedParticipantGraceMs: config.disconnectedParticipantGraceMs,
     loneParticipantGraceMs: config.loneParticipantGraceMs,
     maxRoundHistory: config.maxRoundHistory,
+    minPlayersToReveal: config.minPlayersToReveal,
   });
 
   // La frase sólo protege la creación de salas: entrar a una existente ya

@@ -49,6 +49,8 @@ export type RoomStoreOptions = {
   loneParticipantGraceMs?: number;
   /** Tope de rondas guardadas: el historial no debe crecer sin límite (§3.6). */
   maxRoundHistory?: number;
+  /** Jugadores necesarios para revelar: estimar en solitario no compara nada. */
+  minPlayersToReveal?: number;
   now?: () => number;
 };
 
@@ -356,9 +358,27 @@ export class RoomStore extends EventEmitter {
     return room;
   }
 
+  /** Jugadores de la sala; los espectadores no cuentan porque no votan. */
+  playerCount(room: Room): number {
+    let count = 0;
+    for (const participant of room.participants.values()) {
+      if (participant.role === "player") count += 1;
+    }
+    return count;
+  }
+
   reveal(code: string, participantId: string): Room {
     const room = this.requireRoom(code);
     this.requireFacilitator(room, participantId);
+
+    const minimum = this.options.minPlayersToReveal ?? 2;
+    if (room.status !== "revealed" && this.playerCount(room) < minimum) {
+      throw new RoomOperationError(
+        "NOT_ENOUGH_PLAYERS",
+        `Hacen falta al menos ${minimum} jugadores para revelar.`,
+      );
+    }
+
     if (room.status !== "revealed") {
       room.status = "revealed";
       this.recordRound(room);
@@ -603,6 +623,7 @@ export class RoomStore extends EventEmitter {
       participants,
       results: revealed ? computeResults(room.votes.values()) : null,
       maxParticipants: this.options.maxParticipantsPerRoom,
+      minPlayersToReveal: this.options.minPlayersToReveal ?? 2,
     };
   }
 }

@@ -38,6 +38,8 @@ export const config = {
   loneParticipantGraceMs: num("LONE_PARTICIPANT_GRACE_MS", 300_000),
   /** Rondas conservadas por sala; el historial vive sólo mientras la sala. */
   maxRoundHistory: num("MAX_ROUND_HISTORY", 50),
+  /** Jugadores mínimos para revelar: estimar en solitario no compara nada. */
+  minPlayersToReveal: num("MIN_PLAYERS_TO_REVEAL", 2),
   disconnectedParticipantGraceMs: num(
     "DISCONNECTED_PARTICIPANT_GRACE_MS",
     3_600_000,

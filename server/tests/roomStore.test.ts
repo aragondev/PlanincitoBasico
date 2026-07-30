@@ -88,6 +88,7 @@ describe("votación", () => {
   it("no se puede retirar el voto después de revelar", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
+    store.joinRoom(room.code, "Bea");
     store.submitVote(room.code, participant.id, "5");
     store.reveal(room.code, participant.id);
     expect(() => store.retractVote(room.code, participant.id)).toThrowError(
@@ -105,9 +106,67 @@ describe("votación", () => {
     );
   });
 
+  it("no se puede revelar con un solo jugador", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana");
+    store.submitVote(room.code, participant.id, "5");
+
+    expect(() => store.reveal(room.code, participant.id)).toThrowError(
+      /al menos 2 jugadores/i,
+    );
+    expect(room.status).toBe("voting");
+  });
+
+  it("con dos jugadores sí se revela", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana");
+    store.joinRoom(room.code, "Bea");
+    store.submitVote(room.code, participant.id, "5");
+
+    expect(() => store.reveal(room.code, participant.id)).not.toThrow();
+    expect(room.status).toBe("revealed");
+  });
+
+  it("los espectadores no cuentan para el mínimo", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana");
+    store.joinRoom(room.code, "Bea", true);
+    store.joinRoom(room.code, "Caro", true);
+    store.submitVote(room.code, participant.id, "5");
+
+    expect(store.playerCount(room)).toBe(1);
+    expect(() => store.reveal(room.code, participant.id)).toThrowError(
+      /al menos 2 jugadores/i,
+    );
+  });
+
+  it("un espectador que vuelve a jugar completa el mínimo", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana");
+    const bea = store.joinRoom(room.code, "Bea", true).participant;
+    store.submitVote(room.code, participant.id, "5");
+
+    store.changeRole(room.code, bea.id, bea.id, "player");
+    expect(() => store.reveal(room.code, participant.id)).not.toThrow();
+  });
+
+  it("el mínimo es configurable", () => {
+    const store = createStore({ minPlayersToReveal: 1 });
+    const { room, participant } = store.createRoom("Ana");
+    store.submitVote(room.code, participant.id, "5");
+    expect(() => store.reveal(room.code, participant.id)).not.toThrow();
+  });
+
+  it("el estado público publica el mínimo", () => {
+    const store = createStore();
+    const { room } = store.createRoom("Ana");
+    expect(store.buildPublicState(room).minPlayersToReveal).toBe(2);
+  });
+
   it("no deja votar después de revelar", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
+    store.joinRoom(room.code, "Bea");
     store.reveal(room.code, participant.id);
     expect(() => store.submitVote(room.code, participant.id, "3")).toThrowError(
       /revelada/i,
@@ -125,6 +184,7 @@ describe("votación", () => {
   it("la nueva ronda borra votos, vuelve a votando y avanza el contador", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
+    store.joinRoom(room.code, "Bea");
     store.submitVote(room.code, participant.id, "5");
     store.reveal(room.code, participant.id);
     store.restartRound(room.code, participant.id);
@@ -148,6 +208,7 @@ describe("estado público", () => {
   it("oculta los valores antes de revelar y los muestra después", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
+    store.joinRoom(room.code, "Bea");
     store.submitVote(room.code, participant.id, "5");
 
     const hidden = store.buildPublicState(room).participants[0]!;
@@ -277,6 +338,9 @@ describe("modo espectador", () => {
   it("quien crea la sala puede hacerlo como espectador y seguir dirigiendo", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana", true);
+    // Dos jugadores para que la revelación esté permitida.
+    store.joinRoom(room.code, "Bea");
+    store.joinRoom(room.code, "Caro");
     expect(participant.role).toBe("spectator");
     expect(room.facilitatorId).toBe(participant.id);
     // Espectador no vota, pero sí revela.
@@ -455,6 +519,7 @@ describe("historial de rondas", () => {
   it("acumula rondas con la más reciente primero", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
+    store.joinRoom(room.code, "Bea");
 
     for (const carta of ["1", "2", "3"] as const) {
       store.submitVote(room.code, participant.id, carta);
@@ -469,6 +534,7 @@ describe("historial de rondas", () => {
   it("revelar dos veces la misma ronda no duplica la entrada", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
+    store.joinRoom(room.code, "Bea");
     store.submitVote(room.code, participant.id, "5");
     store.reveal(room.code, participant.id);
     store.reveal(room.code, participant.id);
@@ -490,6 +556,7 @@ describe("historial de rondas", () => {
   it("el historial no crece más allá del tope configurado", () => {
     const store = createStore({ maxRoundHistory: 3 });
     const { room, participant } = store.createRoom("Ana");
+    store.joinRoom(room.code, "Bea");
 
     for (let i = 0; i < 10; i += 1) {
       store.submitVote(room.code, participant.id, "5");
@@ -504,6 +571,7 @@ describe("historial de rondas", () => {
   it("el estado difundido NO arrastra el historial", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
+    store.joinRoom(room.code, "Bea");
     store.submitVote(room.code, participant.id, "13");
     store.reveal(room.code, participant.id);
 
@@ -517,6 +585,7 @@ describe("historial de rondas", () => {
   it("una ronda sin votos numéricos queda registrada sin promedio", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
+    store.joinRoom(room.code, "Bea");
     store.submitVote(room.code, participant.id, "coffee");
     store.reveal(room.code, participant.id);
     expect(room.history[0]!.results.average).toBeNull();
