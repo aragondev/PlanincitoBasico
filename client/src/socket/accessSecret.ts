@@ -1,3 +1,5 @@
+import { read, remove, write } from "./storage";
+
 const KEY = "planincito:access";
 
 /**
@@ -7,14 +9,9 @@ const KEY = "planincito:access";
  */
 let staged: string | null = null;
 
-/** Valor que se envía en el handshake: el intento en curso o el guardado. */
+/** Valor que se envía al crear una sala: el intento en curso o el guardado. */
 export function getAccessSecret(): string {
-  if (staged !== null) return staged;
-  try {
-    return localStorage.getItem(KEY) ?? "";
-  } catch {
-    return "";
-  }
+  return staged ?? read(KEY) ?? "";
 }
 
 /** Prepara una frase para el siguiente intento, sin guardarla todavía. */
@@ -22,34 +19,21 @@ export function stageAccessSecret(secret: string): void {
   staged = secret;
 }
 
+/** `true` si esta visita ya tiene una frase aceptada guardada. */
+export function hasStoredAccessSecret(): boolean {
+  return Boolean(read(KEY));
+}
+
 /**
- * Persiste la frase sólo cuando el servidor aceptó la conexión: así una
- * frase incorrecta no queda recordada para la próxima visita.
+ * Persiste la frase sólo cuando la sala llegó a crearse: así una frase
+ * incorrecta no queda recordada para la próxima visita.
  */
 export function persistAccessSecret(): void {
   const secret = getAccessSecret();
-  if (!secret) return;
-  try {
-    localStorage.setItem(KEY, secret);
-  } catch {
-    // Modo privado: se volverá a pedir en la próxima sesión.
-  }
-}
-
-/** `true` si esta visita ya tiene una frase aceptada guardada. */
-export function hasStoredAccessSecret(): boolean {
-  try {
-    return Boolean(localStorage.getItem(KEY));
-  } catch {
-    return false;
-  }
+  if (secret) write(KEY, secret);
 }
 
 export function clearAccessSecret(): void {
   staged = null;
-  try {
-    localStorage.removeItem(KEY);
-  } catch {
-    // Ignorado a propósito.
-  }
+  remove(KEY);
 }

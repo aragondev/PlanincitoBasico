@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { useFocusTrap } from "../hooks/useFocusTrap";
+
 import type { RoundResults } from "@planincito/shared";
-import { ChartIcon, CloseIcon } from "./Icon";
+import { Drawer } from "./Drawer";
+import { ChartIcon } from "./Icon";
 import { cardLabel } from "./PokerCard";
 
 export function VoteDistribution({ results }: { results: RoundResults }) {
@@ -44,83 +44,30 @@ export function ResultsSummary({ results }: { results: RoundResults }) {
  * en la sala sólo se ve la mesa y el mazo.
  */
 export function VotingResults({ results }: { results: RoundResults }) {
-  const [open, setOpen] = useState(false);
-  const panelRef = useFocusTrap<HTMLElement>(open);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
-
   return (
-    <>
-      <button
-        type="button"
-        className="md-button--text drawer__toggle"
-        aria-label="Resultados"
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
-      >
-        <ChartIcon />
-        <span className="drawer__toggle-label">Resultados</span>
-      </button>
-
-      {open && (
-        <div
-          className="drawer__scrim"
-          role="presentation"
-          onClick={() => setOpen(false)}
-        >
-          <aside
-            ref={panelRef}
-            className="drawer"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Resultados de la ronda"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header className="drawer__header">
-              <h2>Resultados</h2>
-              <button
-                type="button"
-                className="md-icon-button"
-                aria-label="Cerrar resultados"
-                onClick={() => setOpen(false)}
-              >
-                <CloseIcon />
-              </button>
-            </header>
-
-            {results.average !== null ? (
-              <div className="stats">
-                <div className="stat">
-                  <span className="stat__label">Promedio</span>
-                  <span className="stat__value">{results.average}</span>
-                </div>
-                <div className="stat">
-                  <span className="stat__label">Mediana</span>
-                  <span className="stat__value">{results.median}</span>
-                </div>
-                <div className="stat">
-                  <span className="stat__label">Votos</span>
-                  <span className="stat__value">{results.totalVotes}</span>
-                </div>
-              </div>
-            ) : (
-              <p className="muted">
-                No hubo votos numéricos, así que no se calculan promedio ni
-                mediana.
-              </p>
-            )}
-
-            <VoteDistribution results={results} />
-          </aside>
+    <Drawer title="Resultados" icon={<ChartIcon />}>
+      {results.average !== null ? (
+        <div className="stats">
+          <div className="stat">
+            <span className="stat__label">Promedio</span>
+            <span className="stat__value">{results.average}</span>
+          </div>
+          <div className="stat">
+            <span className="stat__label">Mediana</span>
+            <span className="stat__value">{results.median}</span>
+          </div>
+          <div className="stat">
+            <span className="stat__label">Votos</span>
+            <span className="stat__value">{results.totalVotes}</span>
+          </div>
         </div>
+      ) : (
+        <p className="muted">
+          No hubo votos numéricos, así que no se calculan promedio ni mediana.
+        </p>
       )}
-    </>
+
+      <VoteDistribution results={results} />
+    </Drawer>
   );
 }

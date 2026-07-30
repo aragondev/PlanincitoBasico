@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { useFocusTrap } from "../hooks/useFocusTrap";
+
 import type { ParticipantRole, PublicParticipant } from "@planincito/shared";
-import { CloseIcon, UsersIcon } from "./Icon";
+import { Drawer } from "./Drawer";
+import { UsersIcon } from "./Icon";
 import { cardLabel } from "./PokerCard";
 
 type ItemProps = {
@@ -104,74 +104,23 @@ export function ParticipantList({
   maxParticipants,
   ...itemProps
 }: ListProps) {
-  const [open, setOpen] = useState(false);
-  const panelRef = useFocusTrap<HTMLElement>(open);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
-
   return (
-    <>
-      <button
-        type="button"
-        className="md-button--text drawer__toggle"
-        aria-label="Participantes"
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
-      >
-        <UsersIcon />
-        <span className="drawer__toggle-label">Participantes</span>
-        <span className="drawer__badge">
-          {participants.length}/{maxParticipants}
-        </span>
-      </button>
-
-      {open && (
-        <div
-          className="drawer__scrim"
-          role="presentation"
-          onClick={() => setOpen(false)}
-        >
-          <aside
-            ref={panelRef}
-            className="drawer"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Participantes"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header className="drawer__header">
-              <h2>Participantes</h2>
-              <button
-                type="button"
-                className="md-icon-button"
-                aria-label="Cerrar participantes"
-                onClick={() => setOpen(false)}
-              >
-                <CloseIcon />
-              </button>
-            </header>
-
-            <ul className="participants">
-              {participants.map((participant) => (
-                <ParticipantItem
-                  key={participant.participantId}
-                  participant={participant}
-                  isMe={participant.participantId === myId}
-                  isFacilitator={participant.participantId === facilitatorId}
-                  {...itemProps}
-                />
-              ))}
-            </ul>
-          </aside>
-        </div>
-      )}
-    </>
+    <Drawer
+      title="Participantes"
+      icon={<UsersIcon />}
+      badge={`${participants.length}/${maxParticipants}`}
+    >
+      <ul className="participants">
+        {participants.map((participant) => (
+          <ParticipantItem
+            key={participant.participantId}
+            participant={participant}
+            isMe={participant.participantId === myId}
+            isFacilitator={participant.participantId === facilitatorId}
+            {...itemProps}
+          />
+        ))}
+      </ul>
+    </Drawer>
   );
 }
