@@ -146,6 +146,15 @@ describe("ciclo de vida de la sala", () => {
 });
 
 describe("votación en tiempo real", () => {
+  it("con un solo jugador el servidor no deja revelar", async () => {
+    const host = await createRoom("Ana");
+    host.socket.emit(CLIENT_EVENTS.VOTE_SUBMIT, { value: "5" });
+
+    const error = waitFor<RoomError>(host.socket, SERVER_EVENTS.ROOM_ERROR);
+    host.socket.emit(CLIENT_EVENTS.VOTES_REVEAL);
+    expect((await error).code).toBe("NOT_ENOUGH_PLAYERS");
+  });
+
   it("oculta los valores hasta revelar y luego los muestra a todos", async () => {
     const host = await createRoom("Ana");
     const guest = await joinRoom(host.credentials.roomCode, "Bea");
@@ -372,13 +381,17 @@ describe("salud del proceso", () => {
   it("no acumula salas tras crear y cerrar muchas rondas", async () => {
     for (let cycle = 0; cycle < 10; cycle += 1) {
       const host = await createRoom(`Ana ${cycle}`);
+      // Revelar exige dos jugadores.
+      const guest = await joinRoom(host.credentials.roomCode, "Bea");
       for (let round = 0; round < 5; round += 1) {
         host.socket.emit(CLIENT_EVENTS.VOTE_SUBMIT, { value: "3" });
         host.socket.emit(CLIENT_EVENTS.VOTES_REVEAL);
         host.socket.emit(CLIENT_EVENTS.ROUND_RESTART, {});
       }
       await delay(20);
+      // Ambos deben salir para que la sala quede vacía y se libere.
       host.socket.disconnect();
+      guest.socket.disconnect();
     }
     await delay(testConfig.emptyRoomGraceMs + testConfig.cleanupIntervalMs * 4);
     expect(app.store.size).toBe(0);

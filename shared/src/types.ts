@@ -71,6 +71,8 @@ export type PublicRoomState = {
   participants: PublicParticipant[];
   results: RoundResults | null;
   maxParticipants: number;
+  /** Jugadores necesarios para revelar; la regla la fija el servidor. */
+  minPlayersToReveal: number;
 };
 
 export type RoomErrorCode =
@@ -85,6 +87,8 @@ export type RoomErrorCode =
   | "NOT_IN_ROOM"
   | "SPECTATOR_CANNOT_VOTE"
   | "ROUND_ALREADY_REVEALED"
+  /** Estimar en solitario no compara nada: hacen falta dos jugadores. */
+  | "NOT_ENOUGH_PLAYERS"
   | "PARTICIPANT_NOT_FOUND"
   | "RECONNECTION_FAILED"
   | "RATE_LIMITED"

@@ -82,6 +82,7 @@ fallos de interfaz no los puede ver una prueba de servidor.
 | `EMPTY_ROOM_GRACE_MS`               | `3600000`   | Margen antes de eliminar una sala sin nadie conectado. |
 | `LONE_PARTICIPANT_GRACE_MS`         | `300000`    | Margen si la sala tiene una sola persona desconectada. |
 | `MAX_ROUND_HISTORY`                 | `50`        | Rondas guardadas por sala en el historial.      |
+| `MIN_PLAYERS_TO_REVEAL`             | `2`         | Jugadores necesarios para poder revelar.        |
 | `DISCONNECTED_PARTICIPANT_GRACE_MS` | `3600000`   | Margen de reconexión de un participante.        |
 | `MAX_EVENT_PAYLOAD_BYTES`           | `4096`      | Tamaño máximo por evento.                       |
 | `RATE_LIMIT_MAX_EVENTS`             | `60`        | Eventos por socket dentro de la ventana.        |
@@ -146,6 +147,14 @@ en curso, los márgenes son amplios:
   sentido reservar memoria una hora.
 
 Salir con el botón *Salir* es inmediato y no espera ningún margen.
+
+## Hacen falta dos jugadores
+
+Revelar exige al menos `MIN_PLAYERS_TO_REVEAL` jugadores (dos por defecto):
+estimar en solitario no compara nada. Los espectadores no cuentan, porque no
+votan. Mientras no se alcance el mínimo, la mesa lo indica y el botón queda
+inhabilitado; el servidor rechaza el intento igualmente, de modo que la regla
+no depende de la interfaz.
 
 ## Cuenta atrás al revelar
 
