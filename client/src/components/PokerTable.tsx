@@ -207,12 +207,6 @@ export function PokerTable({
         ) : (
           <>
             {results && <ResultsSummary results={results} />}
-            {!revealed && !enoughPlayers && (
-              <p className="table__status">
-                Comparte el enlace: hacen falta al menos{" "}
-                {state.minPlayersToReveal} jugadores.
-              </p>
-            )}
             {isFacilitator ? (
               revealed ? (
                 <button type="button" className="primary" onClick={onRestart}>
@@ -224,12 +218,10 @@ export function PokerTable({
                   className="primary"
                   onClick={onReveal}
                   disabled={!canReveal}
+                  // Con una sola persona el botón apagado se explica solo; el
+                  // aviso que queda es el que no se deduce a simple vista.
                   title={
-                    enoughPlayers
-                      ? anyVote
-                        ? undefined
-                        : "Nadie ha votado todavía"
-                      : `Hacen falta al menos ${state.minPlayersToReveal} jugadores`
+                    enoughPlayers && !anyVote ? "Nadie ha votado todavía" : undefined
                   }
                 >
                   Revelar cartas
@@ -239,11 +231,9 @@ export function PokerTable({
               <p className="table__status" aria-live="polite">
                 {revealed
                   ? "Cartas reveladas"
-                  : !enoughPlayers
-                    ? "Esperando a que se una alguien más…"
-                    : anyVote
-                      ? `Votación en curso · ${voted} de ${players.length}`
-                      : "Votación en curso"}
+                  : anyVote
+                    ? `Votación en curso · ${voted} de ${players.length}`
+                    : "Votación en curso"}
               </p>
             )}
           </>

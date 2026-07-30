@@ -152,9 +152,9 @@ Salir con el botón *Salir* es inmediato y no espera ningún margen.
 
 Revelar exige al menos `MIN_PLAYERS_TO_REVEAL` jugadores (dos por defecto):
 estimar en solitario no compara nada. Los espectadores no cuentan, porque no
-votan. Mientras no se alcance el mínimo, la mesa lo indica y el botón queda
-inhabilitado; el servidor rechaza el intento igualmente, de modo que la regla
-no depende de la interfaz.
+votan. Mientras no se alcance el mínimo el botón queda inhabilitado, sin más
+explicación —con una sola persona en la mesa se entiende solo—, y el servidor
+rechaza el intento igualmente, de modo que la regla no depende de la interfaz.
 
 ## Cuenta atrás al revelar
 
