@@ -294,6 +294,21 @@ button.danger {
   block-size: 18px;
 }
 
+/* Iconos: tamaño único y color heredado, para que la fila de controles se lea
+   como un conjunto en vez de como emoji sueltos. */
+.icon {
+  inline-size: 20px;
+  block-size: 20px;
+  flex: 0 0 auto;
+  display: block;
+}
+
+.seat__eye {
+  inline-size: 18px;
+  block-size: 18px;
+  color: var(--muted);
+}
+
 /* ---------- Paneles ---------- */
 
 .panel {
@@ -1510,12 +1525,11 @@ button.danger {
   border-color: var(--danger);
 }
 
-.toast button {
-  border: none;
-  background: transparent;
-  font-size: 1.25rem;
-  min-block-size: auto;
-  padding: 0 0.25rem;
+.toast .md-icon-button {
+  inline-size: 32px;
+  block-size: 32px;
+  min-block-size: 32px;
+  flex: 0 0 auto;
 }
 
 .dialog__backdrop {

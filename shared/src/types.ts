@@ -70,8 +70,6 @@ export type PublicRoomState = {
   facilitatorId: string;
   participants: PublicParticipant[];
   results: RoundResults | null;
-  /** Rondas reveladas de esta sesión, de la más reciente a la más antigua. */
-  history: RoundHistoryEntry[];
   maxParticipants: number;
 };
 

@@ -501,12 +501,17 @@ describe("historial de rondas", () => {
     expect(room.history.map((h) => h.round)).toEqual([10, 9, 8]);
   });
 
-  it("el estado público incluye el historial", () => {
+  it("el estado difundido NO arrastra el historial", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
     store.submitVote(room.code, participant.id, "13");
     store.reveal(room.code, participant.id);
-    expect(store.buildPublicState(room).history).toHaveLength(1);
+
+    // Reenviarlo en cada evento multiplicaba el tamaño del mensaje por 25.
+    expect(store.buildPublicState(room)).not.toHaveProperty("history");
+    // Se difunde suelto al revelar y completo sólo al entrar.
+    expect(store.lastHistoryEntry(room)?.round).toBe(1);
+    expect(room.history).toHaveLength(1);
   });
 
   it("una ronda sin votos numéricos queda registrada sin promedio", () => {

@@ -51,12 +51,20 @@ npm run dev --workspace client # sólo frontend (http://localhost:5173)
 ## Pruebas
 
 ```bash
-npm test
+npm test        # servidor (91) y cliente (13)
+npm run test:e2e   # recorridos en un navegador real
 ```
 
-Cubre generación de códigos, límites de sala, mecánica de votación, promedio y
-mediana, transferencia de facilitador, limpieza de memoria y un conjunto de
-pruebas de integración con clientes Socket.IO reales.
+**Servidor**: generación de códigos, límites de sala, mecánica de votación,
+promedio y mediana, roles, márgenes de inactividad, historial, limpieza de
+memoria y un conjunto de integración con clientes Socket.IO reales.
+
+**Cliente**: el hook `useRoom` con un socket falso —votar y retirar el voto,
+recuperación de sesión, cuenta atrás, historial incremental y frase de acceso.
+
+**De extremo a extremo**: Playwright levanta backend y frontend de verdad y
+recorre el camino principal con dos participantes. Es la red que faltaba: los
+fallos de interfaz no los puede ver una prueba de servidor.
 
 ## Variables de entorno
 

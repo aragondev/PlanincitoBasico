@@ -6,6 +6,7 @@ import type {
   Throwable,
 } from "@planincito/shared";
 import { cardLabel } from "./PokerCard";
+import { EyeIcon } from "./Icon";
 import { ThrowMenu } from "./ThrowMenu";
 import { ResultsSummary } from "./VotingResults";
 
@@ -67,7 +68,7 @@ function Seat({
           data-seat={participantId}
           aria-label="Espectador"
         >
-          👁
+          <EyeIcon className="seat__eye" />
         </span>
         <span className={`seat__alias${isMe ? " seat__alias--me" : ""}`}>{alias}</span>
       </li>

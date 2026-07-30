@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { ParticipantRole, PublicParticipant } from "@planincito/shared";
+import { CloseIcon, UsersIcon } from "./Icon";
 import { cardLabel } from "./PokerCard";
 
 type ItemProps = {
@@ -103,6 +105,7 @@ export function ParticipantList({
   ...itemProps
 }: ListProps) {
   const [open, setOpen] = useState(false);
+  const panelRef = useFocusTrap<HTMLElement>(open);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -122,7 +125,7 @@ export function ParticipantList({
         aria-expanded={open}
         onClick={() => setOpen(true)}
       >
-        <span aria-hidden="true">👥</span>
+        <UsersIcon />
         <span className="drawer__toggle-label">Participantes</span>
         <span className="drawer__badge">
           {participants.length}/{maxParticipants}
@@ -136,6 +139,7 @@ export function ParticipantList({
           onClick={() => setOpen(false)}
         >
           <aside
+            ref={panelRef}
             className="drawer"
             role="dialog"
             aria-modal="true"
@@ -150,7 +154,7 @@ export function ParticipantList({
                 aria-label="Cerrar participantes"
                 onClick={() => setOpen(false)}
               >
-                ✕
+                <CloseIcon />
               </button>
             </header>
 

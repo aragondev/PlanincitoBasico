@@ -85,7 +85,7 @@ export function RoomPage({
         canEditTopic={isFacilitator}
         onTopicChange={room.setTopic}
         onLeave={onLeave}
-        history={state.history}
+        history={room.history}
         participants={
           <ParticipantList
             participants={state.participants}

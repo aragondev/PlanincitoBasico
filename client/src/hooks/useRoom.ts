@@ -6,6 +6,7 @@ import {
   type ParticipantRole,
   type PublicRoomState,
   type RoomError,
+  type RoundHistoryEntry,
   type SessionCredentials,
   type Throwable,
 } from "@planincito/shared";
@@ -49,6 +50,8 @@ export type RoomApi = {
   myId: string | null;
   isFacilitator: boolean;
   myVote: CardValue | undefined;
+  /** Rondas reveladas: llega completo al entrar y luego ronda a ronda. */
+  history: RoundHistoryEntry[];
   createRoom: (alias: string, asSpectator?: boolean) => void;
   joinRoom: (code: string, alias: string, asSpectator?: boolean) => void;
   leaveRoom: () => void;
@@ -93,6 +96,7 @@ export function useRoom(): RoomApi {
    * recargar aparezca un instante la pantalla de "entrar a la sala".
    */
   const [booting, setBooting] = useState(() => loadSession() !== null);
+  const [history, setHistory] = useState<RoundHistoryEntry[]>([]);
   const [flights, setFlights] = useState<Flight[]>([]);
   /** Segundos que faltan para revelar, o `null` si no hay cuenta atrás. */
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -164,8 +168,11 @@ export function useRoom(): RoomApi {
       credentials?: SessionCredentials;
       state: PublicRoomState;
       yourVote?: CardValue;
+      history?: RoundHistoryEntry[];
     }) => {
       setBooting(false);
+      // El historial completo sólo viene en el mensaje de entrada.
+      if (payload.history) setHistory(payload.history);
       // Si llegamos a entrar, la frase usada era válida: recién ahora se guarda.
       persistAccessSecret();
       setAccessRejected(false);
@@ -183,6 +190,23 @@ export function useRoom(): RoomApi {
 
     const onState = (payload: { state: PublicRoomState }) => {
       if (payload.state.status === "revealed") setCountdown(null);
+      setState(payload.state);
+    };
+
+    const onRevealed = (payload: {
+      state: PublicRoomState;
+      entry?: RoundHistoryEntry;
+    }) => {
+      setCountdown(null);
+      if (payload.entry) {
+        const entry = payload.entry;
+        // Se añade sin duplicar: revelar dos veces emite la misma ronda.
+        setHistory((current) =>
+          current.some((item) => item.round === entry.round)
+            ? current
+            : [entry, ...current],
+        );
+      }
       setState(payload.state);
     };
 
@@ -259,7 +283,7 @@ export function useRoom(): RoomApi {
     socket.on(SERVER_EVENTS.PARTICIPANT_JOINED, onState);
     socket.on(SERVER_EVENTS.PARTICIPANT_LEFT, onState);
     socket.on(SERVER_EVENTS.PARTICIPANT_UPDATED, onState);
-    socket.on(SERVER_EVENTS.VOTES_REVEALED, onState);
+    socket.on(SERVER_EVENTS.VOTES_REVEALED, onRevealed);
     socket.on(SERVER_EVENTS.FACILITATOR_CHANGED, onState);
     socket.on(SERVER_EVENTS.ROUND_RESTARTED, onRoundRestarted);
     socket.on(SERVER_EVENTS.ROOM_ERROR, onError);
@@ -361,6 +385,7 @@ export function useRoom(): RoomApi {
     intentRef.current = null;
     setState(null);
     setCredentials(null);
+    setHistory([]);
     setFlights([]);
     setMyVote(undefined);
     setError(null);
@@ -380,6 +405,7 @@ export function useRoom(): RoomApi {
       myId,
       isFacilitator,
       myVote: effectiveVote,
+      history,
       createRoom: (alias, asSpectator = false) => {
         saveLastAlias(alias);
         start({ type: "create", alias, asSpectator });
@@ -436,7 +462,8 @@ export function useRoom(): RoomApi {
     [
       status, state, credentials, error, notice, accessRejected, booting,
       myId, isFacilitator,
-      effectiveVote, flights, countdown, start, emit, submitAccessSecret, reset,
+      effectiveVote, history, flights, countdown, start, emit,
+      submitAccessSecret, reset,
     ],
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { inviteLinkFor } from "../hooks/useHashRoute";
 import { ConnectionStatus } from "./ConnectionStatus";
+import { CheckIcon, ExitIcon, LinkIcon, MoonIcon, SunIcon } from "./Icon";
 import { RoundHistory } from "./RoundHistory";
 import { TopicEditor } from "./TopicEditor";
 import type { RoundHistoryEntry } from "@planincito/shared";
@@ -35,7 +36,7 @@ export function CopyInviteLink({ code }: { code: string }) {
       title="Copiar enlace de invitación"
       onClick={() => void copy()}
     >
-      <span aria-hidden="true">{copied ? "✅" : "🔗"}</span>
+      {copied ? <CheckIcon /> : <LinkIcon />}
       <span className="drawer__toggle-label">
         {copied ? "¡Copiado!" : "Invitar"}
       </span>
@@ -96,7 +97,7 @@ export function RoomHeader({
           title={theme === "dark" ? "Tema claro" : "Tema oscuro"}
           onClick={onToggleTheme}
         >
-          {theme === "dark" ? "☀️" : "🌙"}
+          {theme === "dark" ? <SunIcon /> : <MoonIcon />}
         </button>
         <button
           type="button"
@@ -105,7 +106,7 @@ export function RoomHeader({
           title="Salir"
           onClick={onLeave}
         >
-          ⏏️
+          <ExitIcon />
         </button>
       </div>
     </header>

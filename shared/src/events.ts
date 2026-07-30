@@ -5,6 +5,7 @@ import type {
   PublicParticipant,
   PublicRoomState,
   RoomError,
+  RoundHistoryEntry,
   SessionCredentials,
 } from "./types.js";
 
@@ -95,6 +96,8 @@ export type ServerToClientEvents = {
     credentials: SessionCredentials;
     state: PublicRoomState;
     yourVote?: CardValue;
+    /** Historial completo, sólo al entrar: después llega ronda a ronda. */
+    history?: RoundHistoryEntry[];
   }) => void;
   /**
    * `credentials` y `yourVote` sólo viajan en el mensaje dirigido al propio
@@ -104,6 +107,7 @@ export type ServerToClientEvents = {
     credentials?: SessionCredentials;
     state: PublicRoomState;
     yourVote?: CardValue;
+    history?: RoundHistoryEntry[];
   }) => void;
   [SERVER_EVENTS.ROOM_ERROR]: (payload: RoomError) => void;
   [SERVER_EVENTS.PARTICIPANT_JOINED]: (payload: {
@@ -118,7 +122,11 @@ export type ServerToClientEvents = {
     participant: PublicParticipant;
     state: PublicRoomState;
   }) => void;
-  [SERVER_EVENTS.VOTES_REVEALED]: (payload: { state: PublicRoomState }) => void;
+  /** La ronda que acaba de cerrarse; el cliente la añade a su historial. */
+  [SERVER_EVENTS.VOTES_REVEALED]: (payload: {
+    state: PublicRoomState;
+    entry?: RoundHistoryEntry;
+  }) => void;
   [SERVER_EVENTS.ROUND_RESTARTED]: (payload: { state: PublicRoomState }) => void;
   [SERVER_EVENTS.FACILITATOR_CHANGED]: (payload: {
     facilitatorId: string;

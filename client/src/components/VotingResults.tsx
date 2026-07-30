@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { RoundResults } from "@planincito/shared";
+import { ChartIcon, CloseIcon } from "./Icon";
 import { cardLabel } from "./PokerCard";
 
 export function VoteDistribution({ results }: { results: RoundResults }) {
@@ -43,6 +45,7 @@ export function ResultsSummary({ results }: { results: RoundResults }) {
  */
 export function VotingResults({ results }: { results: RoundResults }) {
   const [open, setOpen] = useState(false);
+  const panelRef = useFocusTrap<HTMLElement>(open);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -62,7 +65,7 @@ export function VotingResults({ results }: { results: RoundResults }) {
         aria-expanded={open}
         onClick={() => setOpen(true)}
       >
-        <span aria-hidden="true">📊</span>
+        <ChartIcon />
         <span className="drawer__toggle-label">Resultados</span>
       </button>
 
@@ -73,6 +76,7 @@ export function VotingResults({ results }: { results: RoundResults }) {
           onClick={() => setOpen(false)}
         >
           <aside
+            ref={panelRef}
             className="drawer"
             role="dialog"
             aria-modal="true"
@@ -87,7 +91,7 @@ export function VotingResults({ results }: { results: RoundResults }) {
                 aria-label="Cerrar resultados"
                 onClick={() => setOpen(false)}
               >
-                ✕
+                <CloseIcon />
               </button>
             </header>
 
