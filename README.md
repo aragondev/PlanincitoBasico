@@ -148,6 +148,10 @@ en curso, los márgenes son amplios:
 
 Salir con el botón *Salir* es inmediato y no espera ningún margen.
 
+Si eliges una carta mientras la conexión se está restableciendo, se guarda y se
+envía en cuanto vuelve: antes se descartaba en silencio, y como la carta sí
+quedaba marcada en pantalla, la siguiente pulsación se leía como retirarla.
+
 ## Hacen falta dos jugadores
 
 Revelar exige al menos `MIN_PLAYERS_TO_REVEAL` jugadores (dos por defecto):
