@@ -156,6 +156,106 @@ describe("votar", () => {
   });
 });
 
+describe("votar sin conexión", () => {
+  it("el voto elegido mientras se reconecta se envía al volver", async () => {
+    const hook = await enterRoom();
+
+    // Se cae la conexión, como al volver del segundo plano en un móvil.
+    socket.connected = false;
+    await act(async () => {
+      socket.fire("disconnect", "transport close");
+    });
+
+    await act(async () => {
+      hook.result.current.vote("13");
+    });
+
+    // La carta se marca de inmediato, pero aún no ha viajado.
+    expect(hook.result.current.myVote).toBe("13");
+    expect(socket.lastEmit(CLIENT_EVENTS.VOTE_SUBMIT)).toBeUndefined();
+
+    // Al volver, el servidor confirma la sala y el voto se cursa.
+    socket.connected = true;
+    await act(async () => {
+      socket.fire(SERVER_EVENTS.ROOM_STATE, { credentials, state: stateWith() });
+    });
+
+    expect(socket.lastEmit(CLIENT_EVENTS.VOTE_SUBMIT)?.payload).toEqual({
+      value: "13",
+    });
+  });
+
+  it("el estado del servidor no pisa un voto todavía sin enviar", async () => {
+    const hook = await enterRoom();
+    socket.connected = false;
+    await act(async () => {
+      socket.fire("disconnect", "transport close");
+    });
+    await act(async () => {
+      hook.result.current.vote("34");
+    });
+
+    socket.connected = true;
+    // El servidor aún cree que la carta anterior era otra.
+    await act(async () => {
+      socket.fire(SERVER_EVENTS.ROOM_STATE, {
+        credentials,
+        state: stateWith(),
+        yourVote: "3",
+      });
+    });
+
+    expect(hook.result.current.myVote).toBe("34");
+  });
+
+  it("un voto pendiente no se arrastra a la ronda siguiente", async () => {
+    const hook = await enterRoom();
+    socket.connected = false;
+    await act(async () => {
+      socket.fire("disconnect", "transport close");
+    });
+    await act(async () => {
+      hook.result.current.vote("5");
+    });
+
+    // La ronda se reinicia antes de que el voto llegue a enviarse.
+    await act(async () => {
+      socket.fire(SERVER_EVENTS.ROUND_RESTARTED, {
+        state: stateWith({ round: 2 }),
+      });
+    });
+    expect(hook.result.current.myVote).toBeUndefined();
+
+    socket.connected = true;
+    await act(async () => {
+      socket.fire(SERVER_EVENTS.ROOM_STATE, { credentials, state: stateWith() });
+    });
+    expect(socket.lastEmit(CLIENT_EVENTS.VOTE_SUBMIT)).toBeUndefined();
+  });
+
+  it("retirar sin conexión también se cursa al volver", async () => {
+    const hook = await enterRoom();
+    await act(async () => {
+      hook.result.current.vote("8");
+    });
+
+    socket.connected = false;
+    await act(async () => {
+      socket.fire("disconnect", "transport close");
+    });
+    await act(async () => {
+      hook.result.current.vote("8");
+    });
+    expect(hook.result.current.myVote).toBeUndefined();
+
+    socket.connected = true;
+    await act(async () => {
+      socket.fire(SERVER_EVENTS.ROOM_STATE, { credentials, state: stateWith() });
+    });
+    expect(socket.lastEmit(CLIENT_EVENTS.VOTE_RETRACT)).toBeDefined();
+  });
+});
+
 describe("sesión", () => {
   it("guarda las credenciales para poder volver tras cerrar la pestaña", async () => {
     await enterRoom();

@@ -106,6 +106,12 @@ export function useRoom(): RoomApi {
    * atrás llega también al facilitador y limpiaba su propio disparador.
    */
   const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * Voto elegido mientras no había conexión. Antes se descartaba: la carta
+   * quedaba marcada en local, el servidor nunca la recibía y la siguiente
+   * pulsación se interpretaba como retirarla. Ahora se reenvía al volver.
+   */
+  const pendingVote = useRef<{ value: CardValue } | { retract: true } | null>(null);
   const flightId = useRef(0);
 
   if (socketRef.current === null) socketRef.current = createSocket();
@@ -177,14 +183,28 @@ export function useRoom(): RoomApi {
       persistAccessSecret();
       setAccessRejected(false);
       triedSecretRef.current = false;
-      // Al reconectar el servidor nos devuelve nuestra carta: la restauramos.
-      if (payload.yourVote !== undefined) setMyVote(payload.yourVote);
+      // Al reconectar el servidor nos devuelve nuestra carta: la restauramos,
+      // salvo que haya una elección posterior aún sin enviar.
+      if (pendingVote.current === null && payload.yourVote !== undefined) {
+        setMyVote(payload.yourVote);
+      }
       setState(payload.state);
       setStatus("connected");
       if (payload.credentials) {
         setCredentials(payload.credentials);
         saveSession(payload.credentials);
         intentRef.current = { type: "reconnect", credentials: payload.credentials };
+      }
+
+      // Ya estamos de vuelta en la sala: es el momento de cursar lo pendiente.
+      const pending = pendingVote.current;
+      if (pending) {
+        pendingVote.current = null;
+        if ("retract" in pending) {
+          socket.emit(CLIENT_EVENTS.VOTE_RETRACT);
+        } else {
+          socket.emit(CLIENT_EVENTS.VOTE_SUBMIT, { value: pending.value });
+        }
       }
     };
 
@@ -198,6 +218,8 @@ export function useRoom(): RoomApi {
       entry?: RoundHistoryEntry;
     }) => {
       setCountdown(null);
+      // Ya reveladas las cartas, el servidor rechazaría un voto tardío.
+      pendingVote.current = null;
       if (payload.entry) {
         const entry = payload.entry;
         // Se añade sin duplicar: revelar dos veces emite la misma ronda.
@@ -271,6 +293,8 @@ export function useRoom(): RoomApi {
 
     const onRoundRestarted = (payload: { state: PublicRoomState }) => {
       setCountdown(null);
+      // Un voto sin enviar pertenecía a la ronda anterior: ya no aplica.
+      pendingVote.current = null;
       setMyVote(undefined);
       setState(payload.state);
     };
@@ -340,16 +364,23 @@ export function useRoom(): RoomApi {
       event: (typeof CLIENT_EVENTS)[E],
       payload?: unknown,
     ) => {
-      if (!socket.connected) {
-        setError({
-          code: "INVALID_PAYLOAD",
-          message: "Sin conexión con el servidor. Reintentando…",
-        });
-        return;
-      }
+      if (!socket.connected) return false;
       (socket.emit as (name: string, data?: unknown) => void)(event, payload);
+      return true;
     },
     [socket],
+  );
+
+  /** Acciones que no son el voto: sin conexión no hay nada que encolar. */
+  const emitOrWarn = useCallback(
+    (event: string, payload?: unknown) => {
+      if (emit(event as never, payload)) return;
+      setError({
+        code: "INVALID_PAYLOAD",
+        message: "Sin conexión con el servidor. Reintentando…",
+      });
+    },
+    [emit],
   );
 
   /** Guarda la frase compartida y reintenta la acción que quedó pendiente. */
@@ -375,6 +406,7 @@ export function useRoom(): RoomApi {
     state?.participants.find((participant) => participant.participantId === myId)?.vote;
 
   const reset = useCallback(() => {
+    pendingVote.current = null;
     if (revealTimer.current) clearTimeout(revealTimer.current);
     for (const timer of countdownTimers.current) clearTimeout(timer);
     countdownTimers.current = [];
@@ -415,40 +447,47 @@ export function useRoom(): RoomApi {
         start({ type: "join", code, alias, asSpectator });
       },
       leaveRoom: () => {
-        emit(CLIENT_EVENTS.ROOM_LEAVE);
+        emitOrWarn(CLIENT_EVENTS.ROOM_LEAVE);
         reset();
       },
       vote: (value) => {
-        if (effectiveVote === value) {
-          setMyVote(undefined);
-          emit(CLIENT_EVENTS.VOTE_RETRACT);
-          return;
-        }
-        setMyVote(value);
-        emit(CLIENT_EVENTS.VOTE_SUBMIT, { value });
+        const retracting = effectiveVote === value;
+        setMyVote(retracting ? undefined : value);
+
+        const sent = retracting
+          ? emit(CLIENT_EVENTS.VOTE_RETRACT)
+          : emit(CLIENT_EVENTS.VOTE_SUBMIT, { value });
+
+        // Sin conexión se guarda la última intención, que se cursa al volver;
+        // así la carta que ves y la que conoce el servidor no divergen.
+        pendingVote.current = sent
+          ? null
+          : retracting
+            ? { retract: true }
+            : { value };
       },
       reveal: () => {
         const seconds = 3;
         if (revealTimer.current) clearTimeout(revealTimer.current);
-        emit(CLIENT_EVENTS.REVEAL_COUNTDOWN, { seconds });
+        emitOrWarn(CLIENT_EVENTS.REVEAL_COUNTDOWN, { seconds });
         revealTimer.current = setTimeout(
           () => emit(CLIENT_EVENTS.VOTES_REVEAL),
           seconds * 1000,
         );
       },
       countdown,
-      restartRound: (topic) => emit(CLIENT_EVENTS.ROUND_RESTART, { topic }),
-      setTopic: (topic) => emit(CLIENT_EVENTS.TOPIC_UPDATE, { topic }),
+      restartRound: (topic) => emitOrWarn(CLIENT_EVENTS.ROUND_RESTART, { topic }),
+      setTopic: (topic) => emitOrWarn(CLIENT_EVENTS.TOPIC_UPDATE, { topic }),
       kick: (participantId) =>
-        emit(CLIENT_EVENTS.PARTICIPANT_KICK, { participantId }),
+        emitOrWarn(CLIENT_EVENTS.PARTICIPANT_KICK, { participantId }),
       changeRole: (participantId, role) =>
-        emit(CLIENT_EVENTS.PARTICIPANT_CHANGE_ROLE, { participantId, role }),
-      setOwnRole: (role) => emit(CLIENT_EVENTS.PARTICIPANT_CHANGE_ROLE, { role }),
+        emitOrWarn(CLIENT_EVENTS.PARTICIPANT_CHANGE_ROLE, { participantId, role }),
+      setOwnRole: (role) => emitOrWarn(CLIENT_EVENTS.PARTICIPANT_CHANGE_ROLE, { role }),
       transferFacilitator: (participantId) =>
-        emit(CLIENT_EVENTS.FACILITATOR_TRANSFER, { participantId }),
+        emitOrWarn(CLIENT_EVENTS.FACILITATOR_TRANSFER, { participantId }),
       flights,
       throwItem: (participantId, item) =>
-        emit(CLIENT_EVENTS.THROW, { participantId, item }),
+        emitOrWarn(CLIENT_EVENTS.THROW, { participantId, item }),
       endFlight: (id) =>
         setFlights((current) => current.filter((flight) => flight.id !== id)),
       dismissError: () => setError(null),
@@ -462,7 +501,7 @@ export function useRoom(): RoomApi {
     [
       status, state, credentials, error, notice, accessRejected, booting,
       myId, isFacilitator,
-      effectiveVote, history, flights, countdown, start, emit,
+      effectiveVote, history, flights, countdown, start, emit, emitOrWarn,
       submitAccessSecret, reset,
     ],
   );
