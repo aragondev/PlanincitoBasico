@@ -91,6 +91,40 @@ pruebas de integración con clientes Socket.IO reales.
 
 ### Backend en Render Free
 
+El repositorio incluye [`render.yaml`](render.yaml), así que basta crear un
+Blueprint apuntando a este repo. Para configurarlo a mano en el panel:
+
+```text
+Root directory:     (raíz del repositorio)
+Build command:      npm ci && npm run build:server
+Start command:      npm start --workspace server
+Health check path:  /health
+```
+
+> El plan preveía `Root directory: server`, pero el backend importa el paquete
+> `shared/`, que vive fuera de esa carpeta. Construir desde la raíz del monorepo
+> es lo que hace que `npm ci` resuelva el workspace; `tsup` empaqueta `shared`
+> dentro de `dist/server.js`, así que en producción sigue siendo un solo archivo
+> sin dependencias del workspace.
+
+Variables a definir en el panel: `CLIENT_ORIGIN` con el origen exacto de
+GitHub Pages (por ejemplo `https://aragondev.github.io`, sin la ruta) y
+`ROOM_ACCESS_SECRET` con la frase compartida.
+
+### Frontend en GitHub Pages
+
+1. En **Settings → Pages**, elige *GitHub Actions* como origen.
+2. En **Settings → Secrets and variables → Actions → Variables**, crea
+   `VITE_SOCKET_URL` con la URL del servicio de Render.
+3. Haz push a `main`: el workflow
+   [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) publica el sitio.
+
+El enlace de invitación usa hash para no depender de reescrituras del servidor:
+
+```text
+https://aragondev.github.io/PlanincitoBasico/#/room/ABC123
+```
+
 ## Inactividad y reconexión
 
 Un móvil con la pantalla bloqueada, o una pestaña en segundo plano, cierra el
