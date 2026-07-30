@@ -16,6 +16,7 @@ import {
   persistAccessSecret,
   stageAccessSecret,
 } from "../socket/accessSecret";
+import { saveLastAlias } from "../socket/lastAlias";
 import { clearSession, loadSession, saveSession } from "../socket/session";
 import type { Flight } from "../components/ThrowFlight";
 
@@ -379,10 +380,14 @@ export function useRoom(): RoomApi {
       myId,
       isFacilitator,
       myVote: effectiveVote,
-      createRoom: (alias, asSpectator = false) =>
-        start({ type: "create", alias, asSpectator }),
-      joinRoom: (code, alias, asSpectator = false) =>
-        start({ type: "join", code, alias, asSpectator }),
+      createRoom: (alias, asSpectator = false) => {
+        saveLastAlias(alias);
+        start({ type: "create", alias, asSpectator });
+      },
+      joinRoom: (code, alias, asSpectator = false) => {
+        saveLastAlias(alias);
+        start({ type: "join", code, alias, asSpectator });
+      },
       leaveRoom: () => {
         emit(CLIENT_EVENTS.ROOM_LEAVE);
         reset();

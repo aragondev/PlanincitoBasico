@@ -148,6 +148,9 @@ Al entrar, el navegador guarda en `localStorage` el código de la sala, un
 identificador y un token de reconexión. Con eso se recupera el mismo asiento
 —rol y carta incluidos— tras recargar **o tras cerrar y reabrir la pestaña**.
 
+El último alias usado también se recuerda y aparece ya escrito la próxima vez,
+tanto en la portada como al abrir un enlace de invitación.
+
 No es una cuenta: son credenciales de una sala concreta que dejan de servir en
 cuanto esa sala desaparece. El plan (§9) proponía `sessionStorage`, pero el
 navegador lo borra al cerrar la pestaña y quien volvía entraba como participante
