@@ -38,14 +38,15 @@ describe("creación y acceso", () => {
     expect(store.getRoomByCode("ZZZZZZ")).toBeUndefined();
   });
 
-  it("aplica el límite de 8 participantes y rechaza al noveno", () => {
-    const store = createStore();
+  it("llena la sala hasta el límite y rechaza al siguiente", () => {
+    const limite = 12;
+    const store = createStore({ maxParticipantsPerRoom: limite });
     const { room } = store.createRoom("Ana");
-    for (let index = 0; index < 7; index += 1) {
+    for (let index = 1; index < limite; index += 1) {
       store.joinRoom(room.code, `Jugador ${index}`);
     }
-    expect(room.participants.size).toBe(8);
-    expect(() => store.joinRoom(room.code, "Noveno")).toThrowError(/llena/i);
+    expect(room.participants.size).toBe(limite);
+    expect(() => store.joinRoom(room.code, "Sobrante")).toThrowError(/llena/i);
   });
 
   it("aplica el límite de salas activas", () => {

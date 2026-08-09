@@ -73,7 +73,9 @@
   --border: #cbc6b2;
   --text: #1b1c18;
   --muted: #45483f;
-  --muted-dim: #75786d;
+  /* #75786d daba 4.06:1 sobre el fondo: por debajo del mínimo para texto
+     pequeño. Éste llega a 5.1:1 sin dejar de leerse como secundario. */
+  --muted-dim: #5f6257;
 
   --brand: #7a5a09;
   --brand-container: #f7e2ab;
@@ -1505,6 +1507,22 @@ button.danger {
     opacity: 0;
     transform: scale(0.94);
   }
+}
+
+.error-details {
+  margin-block-start: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted-dim);
+}
+
+.error-details pre {
+  margin: 0.5rem 0 0;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* ---------- Festejo por consenso ---------- */

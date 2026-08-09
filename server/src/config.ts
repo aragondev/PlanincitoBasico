@@ -28,7 +28,12 @@ export const config = {
   accessMaxAttempts: num("ACCESS_MAX_ATTEMPTS", 10),
   accessAttemptWindowMs: num("ACCESS_ATTEMPT_WINDOW_MS", 600_000),
   maxActiveRooms: num("MAX_ACTIVE_ROOMS", 25),
-  maxParticipantsPerRoom: num("MAX_PARTICIPANTS_PER_ROOM", 8),
+  maxParticipantsPerRoom: num("MAX_PARTICIPANTS_PER_ROOM", 12),
+  /**
+   * Sockets simultáneos por IP. Un equipo comparte la IP de su oficina, así
+   * que el margen se cuenta en salas llenas: 48 son cuatro de doce personas.
+   */
+  maxConnectionsPerIp: num("MAX_CONNECTIONS_PER_IP", 48),
   /**
    * Una hora: un móvil en segundo plano corta el WebSocket a los pocos
    * segundos, y con márgenes cortos expulsaba a gente que seguía en la reunión.

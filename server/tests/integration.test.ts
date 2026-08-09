@@ -14,7 +14,7 @@ import { config as baseConfig, type Config } from "../src/config.js";
 const testConfig: Config = {
   ...baseConfig,
   clientOrigin: "*",
-  maxParticipantsPerRoom: 8,
+  maxParticipantsPerRoom: 12,
   maxActiveRooms: 25,
   emptyRoomGraceMs: 200,
   disconnectedParticipantGraceMs: 200,
@@ -105,17 +105,19 @@ describe("ciclo de vida de la sala", () => {
     expect(state.participants).toHaveLength(1);
   });
 
-  it("acepta 8 conexiones y rechaza claramente la novena", async () => {
-    const { credentials } = await createRoom("Ana");
-    for (let index = 1; index < 8; index += 1) {
+  it("acepta 12 conexiones y rechaza claramente la decimotercera", async () => {
+    const { credentials, state } = await createRoom("Ana");
+    expect(state.maxParticipants).toBe(12);
+
+    for (let index = 1; index < 12; index += 1) {
       await joinRoom(credentials.roomCode, `Jugador ${index}`);
     }
 
-    const ninth = connect();
-    const error = waitFor<RoomError>(ninth, SERVER_EVENTS.ROOM_ERROR);
-    ninth.emit(CLIENT_EVENTS.ROOM_JOIN, {
+    const sobrante = connect();
+    const error = waitFor<RoomError>(sobrante, SERVER_EVENTS.ROOM_ERROR);
+    sobrante.emit(CLIENT_EVENTS.ROOM_JOIN, {
       code: credentials.roomCode,
-      alias: "Noveno",
+      alias: "Sobrante",
     });
     expect((await error).code).toBe("ROOM_FULL");
   });

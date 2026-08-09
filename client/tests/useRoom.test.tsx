@@ -90,7 +90,7 @@ function stateWith(overrides: Partial<PublicRoomState> = {}): PublicRoomState {
       },
     ],
     results: null,
-    maxParticipants: 8,
+    maxParticipants: 12,
     ...overrides,
   };
 }

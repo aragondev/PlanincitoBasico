@@ -6,6 +6,7 @@ import { SERVER_EVENTS } from "@planincito/shared";
 import { config as defaultConfig, type Config } from "./config.js";
 import { RoomStore } from "./rooms/roomStore.js";
 import { AccessGate } from "./socket/accessGate.js";
+import { registerConnectionLimit } from "./socket/connectionLimit.js";
 import { registerSocketHandlers, type AppServer } from "./socket/handlers.js";
 
 export type App = {
@@ -55,6 +56,9 @@ export function createApp(config: Config = defaultConfig): App {
     maxRoundHistory: config.maxRoundHistory,
     minPlayersToReveal: config.minPlayersToReveal,
   });
+
+  // Antes que nada: nadie debe poder abrir sockets sin límite.
+  registerConnectionLimit(io, config.maxConnectionsPerIp);
 
   // La frase sólo protege la creación de salas: entrar a una existente ya
   // requiere conocer su código.
