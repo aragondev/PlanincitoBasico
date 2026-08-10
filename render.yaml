@@ -22,7 +22,17 @@ services:
         value: 12
       - key: MAX_CONNECTIONS_PER_IP
         value: 48
+      # Márgenes amplios: un móvil en segundo plano corta el WebSocket en
+      # segundos, y con 60 s expulsaba a gente que seguía en la reunión.
+      # Estos valores deben seguir a los de server/src/config.ts: lo que se
+      # define aquí sobrescribe el valor por defecto del código.
       - key: EMPTY_ROOM_GRACE_MS
-        value: 60000
+        value: 3600000
       - key: DISCONNECTED_PARTICIPANT_GRACE_MS
-        value: 60000
+        value: 3600000
+      - key: LONE_PARTICIPANT_GRACE_MS
+        value: 300000
+      - key: MIN_PLAYERS_TO_REVEAL
+        value: 2
+      - key: MAX_ROUND_HISTORY
+        value: 50
