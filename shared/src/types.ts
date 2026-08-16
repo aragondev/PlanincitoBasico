@@ -89,6 +89,8 @@ export type RoomErrorCode =
   | "ROUND_ALREADY_REVEALED"
   /** Estimar en solitario no compara nada: hacen falta dos jugadores. */
   | "NOT_ENOUGH_PLAYERS"
+  /** Queda gente en la mesa sin elegir carta. */
+  | "VOTES_PENDING"
   | "PARTICIPANT_NOT_FOUND"
   | "RECONNECTION_FAILED"
   | "RATE_LIMITED"

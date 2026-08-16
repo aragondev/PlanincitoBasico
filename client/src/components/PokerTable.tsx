@@ -176,10 +176,13 @@ export function PokerTable({
   const players = state.participants.filter((p) => p.role !== "spectator");
   const voted = players.filter((p) => p.hasVoted).length;
   const anyVote = voted > 0;
-  // Estimar en solitario no compara nada: el servidor exige un mínimo. Es la
-  // única condición para revelar; que nadie haya elegido carta no bloquea —el
-  // facilitador puede cerrar la ronda igualmente y empezar otra.
-  const canReveal = players.length >= state.minPlayersToReveal;
+  // Estimar en solitario no compara nada: el servidor exige un mínimo.
+  const enoughPlayers = players.length >= state.minPlayersToReveal;
+  // Y nadie que siga en la mesa puede quedarse a medias: revelar destaparía a
+  // quien todavía está pensando. Los desconectados no cuentan, o una señal
+  // perdida dejaría la ronda bloqueada. El servidor comprueba lo mismo.
+  const pending = players.filter((p) => p.connected && !p.hasVoted).length;
+  const canReveal = enoughPlayers && pending === 0;
 
   return (
     <section className="table" aria-label="Mesa">
@@ -219,6 +222,15 @@ export function PokerTable({
                   className="primary"
                   onClick={onReveal}
                   disabled={!canReveal}
+                  // Con una sola persona el botón apagado se explica solo; lo
+                  // que no se deduce a simple vista es a cuánta gente se espera.
+                  title={
+                    enoughPlayers && pending > 0
+                      ? pending === 1
+                        ? "Falta una persona por elegir carta"
+                        : `Faltan ${pending} personas por elegir carta`
+                      : undefined
+                  }
                 >
                   Revelar cartas
                 </button>

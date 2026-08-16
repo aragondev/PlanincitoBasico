@@ -89,8 +89,9 @@ describe("votación", () => {
   it("no se puede retirar el voto después de revelar", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
-    store.joinRoom(room.code, "Bea");
+    const bea = store.joinRoom(room.code, "Bea").participant;
     store.submitVote(room.code, participant.id, "5");
+    store.submitVote(room.code, bea.id, "5");
     store.reveal(room.code, participant.id);
     expect(() => store.retractVote(room.code, participant.id)).toThrowError(
       /revelada/i,
@@ -118,14 +119,55 @@ describe("votación", () => {
     expect(room.status).toBe("voting");
   });
 
-  it("con dos jugadores sí se revela", () => {
+  it("con dos jugadores que ya votaron sí se revela", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
-    store.joinRoom(room.code, "Bea");
+    const bea = store.joinRoom(room.code, "Bea").participant;
     store.submitVote(room.code, participant.id, "5");
+    store.submitVote(room.code, bea.id, "8");
 
     expect(() => store.reveal(room.code, participant.id)).not.toThrow();
     expect(room.status).toBe("revealed");
+  });
+
+  it("no se revela mientras quede alguien sin elegir carta", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana");
+    const bea = store.joinRoom(room.code, "Bea").participant;
+    store.submitVote(room.code, participant.id, "5");
+
+    expect(store.pendingVoters(room)).toBe(1);
+    expect(() => store.reveal(room.code, participant.id)).toThrowError(
+      /falta una persona/i,
+    );
+    expect(room.status).toBe("voting");
+
+    store.submitVote(room.code, bea.id, "8");
+    expect(store.pendingVoters(room)).toBe(0);
+    expect(() => store.reveal(room.code, participant.id)).not.toThrow();
+  });
+
+  it("los espectadores no bloquean la revelación", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana");
+    const bea = store.joinRoom(room.code, "Bea").participant;
+    store.joinRoom(room.code, "Caro", true);
+    store.submitVote(room.code, participant.id, "5");
+    store.submitVote(room.code, bea.id, "8");
+
+    expect(store.pendingVoters(room)).toBe(0);
+    expect(() => store.reveal(room.code, participant.id)).not.toThrow();
+  });
+
+  it("quien perdió la conexión sin votar no deja la mesa bloqueada", () => {
+    const store = createStore();
+    const { room, participant } = store.createRoom("Ana");
+    const bea = store.joinRoom(room.code, "Bea").participant;
+    store.submitVote(room.code, participant.id, "5");
+
+    store.markDisconnected(room.code, bea.id);
+    expect(store.pendingVoters(room)).toBe(0);
+    expect(() => store.reveal(room.code, participant.id)).not.toThrow();
   });
 
   it("los espectadores no cuentan para el mínimo", () => {
@@ -148,6 +190,7 @@ describe("votación", () => {
     store.submitVote(room.code, participant.id, "5");
 
     store.changeRole(room.code, bea.id, bea.id, "player");
+    store.submitVote(room.code, bea.id, "8");
     expect(() => store.reveal(room.code, participant.id)).not.toThrow();
   });
 
@@ -167,7 +210,9 @@ describe("votación", () => {
   it("no deja votar después de revelar", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
-    store.joinRoom(room.code, "Bea");
+    const bea = store.joinRoom(room.code, "Bea").participant;
+    store.submitVote(room.code, participant.id, "5");
+    store.submitVote(room.code, bea.id, "5");
     store.reveal(room.code, participant.id);
     expect(() => store.submitVote(room.code, participant.id, "3")).toThrowError(
       /revelada/i,
@@ -185,8 +230,9 @@ describe("votación", () => {
   it("la nueva ronda borra votos, vuelve a votando y avanza el contador", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
-    store.joinRoom(room.code, "Bea");
+    const bea = store.joinRoom(room.code, "Bea").participant;
     store.submitVote(room.code, participant.id, "5");
+    store.submitVote(room.code, bea.id, "5");
     store.reveal(room.code, participant.id);
     store.restartRound(room.code, participant.id);
     expect(room.votes.size).toBe(0);
@@ -209,8 +255,9 @@ describe("estado público", () => {
   it("oculta los valores antes de revelar y los muestra después", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
-    store.joinRoom(room.code, "Bea");
+    const bea = store.joinRoom(room.code, "Bea").participant;
     store.submitVote(room.code, participant.id, "5");
+    store.submitVote(room.code, bea.id, "5");
 
     const hidden = store.buildPublicState(room).participants[0]!;
     expect(hidden.hasVoted).toBe(true);
@@ -339,9 +386,11 @@ describe("modo espectador", () => {
   it("quien crea la sala puede hacerlo como espectador y seguir dirigiendo", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana", true);
-    // Dos jugadores para que la revelación esté permitida.
-    store.joinRoom(room.code, "Bea");
-    store.joinRoom(room.code, "Caro");
+    // Dos jugadores, ya votados, para que la revelación esté permitida.
+    const bea = store.joinRoom(room.code, "Bea").participant;
+    const caro = store.joinRoom(room.code, "Caro").participant;
+    store.submitVote(room.code, bea.id, "5");
+    store.submitVote(room.code, caro.id, "8");
     expect(participant.role).toBe("spectator");
     expect(room.facilitatorId).toBe(participant.id);
     // Espectador no vota, pero sí revela.
@@ -520,10 +569,11 @@ describe("historial de rondas", () => {
   it("acumula rondas con la más reciente primero", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
-    store.joinRoom(room.code, "Bea");
+    const bea = store.joinRoom(room.code, "Bea").participant;
 
     for (const carta of ["1", "2", "3"] as const) {
       store.submitVote(room.code, participant.id, carta);
+      store.submitVote(room.code, bea.id, carta);
       store.reveal(room.code, participant.id);
       store.restartRound(room.code, participant.id);
     }
@@ -535,8 +585,9 @@ describe("historial de rondas", () => {
   it("revelar dos veces la misma ronda no duplica la entrada", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
-    store.joinRoom(room.code, "Bea");
+    const bea = store.joinRoom(room.code, "Bea").participant;
     store.submitVote(room.code, participant.id, "5");
+    store.submitVote(room.code, bea.id, "5");
     store.reveal(room.code, participant.id);
     store.reveal(room.code, participant.id);
     expect(room.history).toHaveLength(1);
@@ -546,21 +597,26 @@ describe("historial de rondas", () => {
     const store = createStore();
     const { room, participant: ana } = store.createRoom("Ana");
     const bea = store.joinRoom(room.code, "Bea").participant;
+    store.submitVote(room.code, ana.id, "3");
     store.submitVote(room.code, bea.id, "8");
     store.reveal(room.code, ana.id);
 
     store.kick(room.code, ana.id, bea.id);
     expect(room.participants.has(bea.id)).toBe(false);
-    expect(room.history[0]!.votes).toEqual([{ alias: "Bea", vote: "8" }]);
+    expect(room.history[0]!.votes).toEqual([
+      { alias: "Ana", vote: "3" },
+      { alias: "Bea", vote: "8" },
+    ]);
   });
 
   it("el historial no crece más allá del tope configurado", () => {
     const store = createStore({ maxRoundHistory: 3 });
     const { room, participant } = store.createRoom("Ana");
-    store.joinRoom(room.code, "Bea");
+    const bea = store.joinRoom(room.code, "Bea").participant;
 
     for (let i = 0; i < 10; i += 1) {
       store.submitVote(room.code, participant.id, "5");
+      store.submitVote(room.code, bea.id, "5");
       store.reveal(room.code, participant.id);
       store.restartRound(room.code, participant.id);
     }
@@ -572,8 +628,9 @@ describe("historial de rondas", () => {
   it("el estado difundido NO arrastra el historial", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
-    store.joinRoom(room.code, "Bea");
+    const bea = store.joinRoom(room.code, "Bea").participant;
     store.submitVote(room.code, participant.id, "13");
+    store.submitVote(room.code, bea.id, "13");
     store.reveal(room.code, participant.id);
 
     // Reenviarlo en cada evento multiplicaba el tamaño del mensaje por 25.
@@ -586,11 +643,15 @@ describe("historial de rondas", () => {
   it("una ronda sin votos numéricos queda registrada sin promedio", () => {
     const store = createStore();
     const { room, participant } = store.createRoom("Ana");
-    store.joinRoom(room.code, "Bea");
+    const bea = store.joinRoom(room.code, "Bea").participant;
     store.submitVote(room.code, participant.id, "coffee");
+    store.submitVote(room.code, bea.id, "?");
     store.reveal(room.code, participant.id);
     expect(room.history[0]!.results.average).toBeNull();
-    expect(room.history[0]!.votes).toEqual([{ alias: "Ana", vote: "coffee" }]);
+    expect(room.history[0]!.votes).toEqual([
+      { alias: "Ana", vote: "coffee" },
+      { alias: "Bea", vote: "?" },
+    ]);
   });
 });
 
@@ -630,8 +691,9 @@ describe("limpieza de salas", () => {
     for (let cycle = 0; cycle < 200; cycle += 1) {
       const { room, participant } = store.createRoom("Ana");
       salas.push(room);
-      store.joinRoom(room.code, "Bea");
+      const bea = store.joinRoom(room.code, "Bea").participant;
       store.submitVote(room.code, participant.id, "5");
+      store.submitVote(room.code, bea.id, "5");
       store.reveal(room.code, participant.id);
       for (const id of [...room.participants.keys()]) {
         store.markDisconnected(room.code, id);

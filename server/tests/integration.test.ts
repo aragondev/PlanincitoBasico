@@ -157,6 +157,16 @@ describe("votación en tiempo real", () => {
     expect((await error).code).toBe("NOT_ENOUGH_PLAYERS");
   });
 
+  it("el servidor no deja revelar con votos pendientes", async () => {
+    const host = await createRoom("Ana");
+    await joinRoom(host.credentials.roomCode, "Bea");
+    host.socket.emit(CLIENT_EVENTS.VOTE_SUBMIT, { value: "5" });
+
+    const error = waitFor<RoomError>(host.socket, SERVER_EVENTS.ROOM_ERROR);
+    host.socket.emit(CLIENT_EVENTS.VOTES_REVEAL);
+    expect((await error).code).toBe("VOTES_PENDING");
+  });
+
   it("oculta los valores hasta revelar y luego los muestra a todos", async () => {
     const host = await createRoom("Ana");
     const guest = await joinRoom(host.credentials.roomCode, "Bea");
@@ -176,6 +186,8 @@ describe("votación en tiempo real", () => {
       guest.socket,
       SERVER_EVENTS.VOTES_REVEALED,
     );
+    // Nadie puede quedar a medias: el anfitrión también elige carta.
+    host.socket.emit(CLIENT_EVENTS.VOTE_SUBMIT, { value: "8" });
     host.socket.emit(CLIENT_EVENTS.VOTES_REVEAL);
     const revealed = await guestRevealed;
     expect(
@@ -199,6 +211,7 @@ describe("votación en tiempo real", () => {
     const host = await createRoom("Ana");
     const guest = await joinRoom(host.credentials.roomCode, "Bea");
     guest.socket.emit(CLIENT_EVENTS.VOTE_SUBMIT, { value: "5" });
+    host.socket.emit(CLIENT_EVENTS.VOTE_SUBMIT, { value: "5" });
     host.socket.emit(CLIENT_EVENTS.VOTES_REVEAL);
     await waitFor(guest.socket, SERVER_EVENTS.VOTES_REVEALED);
 
@@ -383,10 +396,11 @@ describe("salud del proceso", () => {
   it("no acumula salas tras crear y cerrar muchas rondas", async () => {
     for (let cycle = 0; cycle < 10; cycle += 1) {
       const host = await createRoom(`Ana ${cycle}`);
-      // Revelar exige dos jugadores.
+      // Revelar exige dos jugadores y que ambos hayan votado.
       const guest = await joinRoom(host.credentials.roomCode, "Bea");
       for (let round = 0; round < 5; round += 1) {
         host.socket.emit(CLIENT_EVENTS.VOTE_SUBMIT, { value: "3" });
+        guest.socket.emit(CLIENT_EVENTS.VOTE_SUBMIT, { value: "3" });
         host.socket.emit(CLIENT_EVENTS.VOTES_REVEAL);
         host.socket.emit(CLIENT_EVENTS.ROUND_RESTART, {});
       }

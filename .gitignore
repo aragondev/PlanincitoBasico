@@ -1,5 +1,6 @@
-# Documento de planificación interno: se conserva en local, no en el repositorio.
+# Documentos internos: se conservan en local, no en el repositorio.
 PLAN.md
+NOTAS.md
 
 node_modules/
 dist/

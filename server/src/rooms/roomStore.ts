@@ -367,6 +367,25 @@ export class RoomStore extends EventEmitter {
     return count;
   }
 
+  /**
+   * Jugadores presentes que aún no han elegido carta. Quien está desconectado
+   * no cuenta: si no, un móvil que perdió la señal bloquearía la mesa hasta
+   * que el barrido lo retire.
+   */
+  pendingVoters(room: Room): number {
+    let count = 0;
+    for (const participant of room.participants.values()) {
+      if (
+        participant.role === "player" &&
+        participant.connected &&
+        !room.votes.has(participant.id)
+      ) {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
   reveal(code: string, participantId: string): Room {
     const room = this.requireRoom(code);
     this.requireFacilitator(room, participantId);
@@ -377,6 +396,19 @@ export class RoomStore extends EventEmitter {
         "NOT_ENOUGH_PLAYERS",
         `Hacen falta al menos ${minimum} jugadores para revelar.`,
       );
+    }
+
+    // Revelar con votos pendientes destaparía a quien todavía está pensando.
+    if (room.status !== "revealed") {
+      const pending = this.pendingVoters(room);
+      if (pending > 0) {
+        throw new RoomOperationError(
+          "VOTES_PENDING",
+          pending === 1
+            ? "Falta una persona por elegir carta."
+            : `Faltan ${pending} personas por elegir carta.`,
+        );
+      }
     }
 
     if (room.status !== "revealed") {
