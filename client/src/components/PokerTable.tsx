@@ -176,9 +176,10 @@ export function PokerTable({
   const players = state.participants.filter((p) => p.role !== "spectator");
   const voted = players.filter((p) => p.hasVoted).length;
   const anyVote = voted > 0;
-  // Estimar en solitario no compara nada: el servidor exige un mínimo.
-  const enoughPlayers = players.length >= state.minPlayersToReveal;
-  const canReveal = anyVote && enoughPlayers;
+  // Estimar en solitario no compara nada: el servidor exige un mínimo. Es la
+  // única condición para revelar; que nadie haya elegido carta no bloquea —el
+  // facilitador puede cerrar la ronda igualmente y empezar otra.
+  const canReveal = players.length >= state.minPlayersToReveal;
 
   return (
     <section className="table" aria-label="Mesa">
@@ -218,11 +219,6 @@ export function PokerTable({
                   className="primary"
                   onClick={onReveal}
                   disabled={!canReveal}
-                  // Con una sola persona el botón apagado se explica solo; el
-                  // aviso que queda es el que no se deduce a simple vista.
-                  title={
-                    enoughPlayers && !anyVote ? "Nadie ha votado todavía" : undefined
-                  }
                 >
                   Revelar cartas
                 </button>

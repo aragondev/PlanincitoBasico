@@ -27,6 +27,9 @@ export function VoteDistribution({ results }: { results: RoundResults }) {
 
 /** Resumen de una línea para la propia mesa: lo que se mira al revelar. */
 export function ResultsSummary({ results }: { results: RoundResults }) {
+  if (results.totalVotes === 0) {
+    return <p className="table__figures">Nadie votó</p>;
+  }
   if (results.average === null) {
     return <p className="table__figures">Sin votos numéricos</p>;
   }
@@ -46,7 +49,9 @@ export function ResultsSummary({ results }: { results: RoundResults }) {
 export function VotingResults({ results }: { results: RoundResults }) {
   return (
     <Drawer title="Resultados" icon={<ChartIcon />}>
-      {results.average !== null ? (
+      {results.totalVotes === 0 ? (
+        <p className="muted">La ronda se reveló sin que nadie eligiera carta.</p>
+      ) : results.average !== null ? (
         <div className="stats">
           <div className="stat">
             <span className="stat__label">Promedio</span>
