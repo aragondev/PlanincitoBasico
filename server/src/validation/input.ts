@@ -1,10 +1,12 @@
 import {
   CARD_VALUES,
   LIMITS,
+  REACTIONS,
   ROOM_CODE_ALPHABET,
   THROWABLES,
   type CardValue,
   type ParticipantRole,
+  type Reaction,
   type Throwable,
 } from "@planincito/shared";
 
@@ -111,6 +113,13 @@ export function parseThrowable(value: unknown): Throwable {
     throw new ValidationError("INVALID_PAYLOAD", "Ese objeto no se puede lanzar.");
   }
   return value as Throwable;
+}
+
+export function parseReaction(value: unknown): Reaction {
+  if (typeof value !== "string" || !REACTIONS.includes(value as Reaction)) {
+    throw new ValidationError("INVALID_PAYLOAD", "Ese emoticón no está en la lista.");
+  }
+  return value as Reaction;
 }
 
 /** Rechaza payloads desproporcionados antes de procesarlos (§3.5). */

@@ -128,6 +128,24 @@ export const THROWABLES = [
 
 export type Throwable = (typeof THROWABLES)[number];
 
+/**
+ * Emoticones que se pueden dejar sobre la carta de cualquiera, incluida la
+ * propia. A diferencia de los lanzamientos, no hace falta que la persona
+ * siga pendiente de votar: es un aplauso, no una prisa.
+ */
+export const REACTIONS = [
+  "👍",
+  "👏",
+  "🎉",
+  "😂",
+  "🤯",
+  "🔥",
+  "❤️",
+  "🐢",
+] as const;
+
+export type Reaction = (typeof REACTIONS)[number];
+
 /** Credenciales temporales guardadas en `sessionStorage` (§9). */
 export type SessionCredentials = {
   roomCode: string;

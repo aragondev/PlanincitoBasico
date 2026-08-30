@@ -1,6 +1,7 @@
 import type {
   CardValue,
   ParticipantRole,
+  Reaction,
   Throwable,
   PublicParticipant,
   PublicRoomState,
@@ -35,6 +36,7 @@ export const CLIENT_EVENTS = {
   PARTICIPANT_CHANGE_ROLE: "participant:change-role",
   FACILITATOR_TRANSFER: "facilitator:transfer",
   THROW: "participant:throw",
+  REACT: "participant:react",
 } as const;
 
 export const SERVER_EVENTS = {
@@ -50,6 +52,7 @@ export const SERVER_EVENTS = {
   SERVER_RESTARTING: "server:restarting",
   ROOM_CLOSED: "room:closed",
   THROWN: "participant:thrown",
+  REACTED: "participant:reacted",
   COUNTDOWN_STARTED: "votes:countdown-started",
 } as const;
 
@@ -88,6 +91,11 @@ export type ClientToServerEvents = {
   [CLIENT_EVENTS.THROW]: (payload: {
     participantId: string;
     item: Throwable;
+  }) => void;
+  /** Deja un emoticón sobre la carta de alguien; vale para cualquier asiento. */
+  [CLIENT_EVENTS.REACT]: (payload: {
+    participantId: string;
+    emoji: Reaction;
   }) => void;
 };
 
@@ -142,5 +150,12 @@ export type ServerToClientEvents = {
     fromAlias: string;
     toId: string;
     item: Throwable;
+  }) => void;
+  /** Tampoco cambia el estado: el emoticón vive unos segundos en la carta. */
+  [SERVER_EVENTS.REACTED]: (payload: {
+    fromId: string;
+    fromAlias: string;
+    toId: string;
+    emoji: Reaction;
   }) => void;
 };

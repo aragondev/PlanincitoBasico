@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { THROWABLES, type Throwable } from "@planincito/shared";
+import { REACTIONS, THROWABLES, type Reaction, type Throwable } from "@planincito/shared";
 
 /**
  * El avión y la flecha se dibujan en SVG: los emoji equivalentes son
@@ -55,14 +55,27 @@ export function ThrowableIcon({
   return <span className={className}>{THROWABLE_GLYPH[item]}</span>;
 }
 
+/** Un emoticón dejado sobre una carta; vive unos segundos y se borra solo. */
+export type SeatReaction = {
+  id: number;
+  toId: string;
+  emoji: Reaction;
+};
+
 type Props = {
   alias: string;
+  /** Sólo hay objetos que lanzar mientras esa persona siga sin votar. */
+  canThrow: boolean;
+  onReact: (emoji: Reaction) => void;
   onPick: (item: Throwable) => void;
   onClose: () => void;
 };
 
-/** Menú de objetos para meter prisa a quien todavía no ha votado. */
-export function ThrowMenu({ alias, onPick, onClose }: Props) {
+/**
+ * Menú del asiento: emoticones para reaccionar sobre cualquier carta y, si
+ * quien la ocupa aún no ha votado, objetos para meterle prisa.
+ */
+export function SeatMenu({ alias, canThrow, onReact, onPick, onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -89,23 +102,51 @@ export function ThrowMenu({ alias, onPick, onClose }: Props) {
   }, [onClose]);
 
   return (
-    <div className="throwmenu" ref={ref} role="menu" aria-label={`Lanzar algo a ${alias}`}>
-      {THROWABLES.map((item) => (
-        <button
-          key={item}
-          type="button"
-          role="menuitem"
-          className="throwmenu__item"
-          title={`${THROWABLE_LABEL[item]} a ${alias}`}
-          aria-label={`Lanzar ${THROWABLE_LABEL[item]} a ${alias}`}
-          onClick={(event) => {
-            event.stopPropagation();
-            onPick(item);
-          }}
-        >
-          <ThrowableIcon item={item} className="throwmenu__glyph" />
-        </button>
-      ))}
+    <div
+      className="seatmenu"
+      ref={ref}
+      role="menu"
+      aria-label={`Reaccionar a la carta de ${alias}`}
+    >
+      <div className="seatmenu__row">
+        {REACTIONS.map((emoji) => (
+          <button
+            key={emoji}
+            type="button"
+            role="menuitem"
+            className="seatmenu__item"
+            title={`Reaccionar con ${emoji} a ${alias}`}
+            aria-label={`Reaccionar con ${emoji} sobre la carta de ${alias}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onReact(emoji);
+            }}
+          >
+            <span className="seatmenu__glyph">{emoji}</span>
+          </button>
+        ))}
+      </div>
+
+      {canThrow && (
+        <div className="seatmenu__row seatmenu__row--throw">
+          {THROWABLES.map((item) => (
+            <button
+              key={item}
+              type="button"
+              role="menuitem"
+              className="seatmenu__item"
+              title={`${THROWABLE_LABEL[item]} a ${alias}`}
+              aria-label={`Lanzar ${THROWABLE_LABEL[item]} a ${alias}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onPick(item);
+              }}
+            >
+              <ThrowableIcon item={item} className="seatmenu__glyph" />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

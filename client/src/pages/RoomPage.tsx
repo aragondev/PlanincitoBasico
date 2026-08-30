@@ -116,6 +116,8 @@ export function RoomPage({
           onReveal={room.reveal}
           onRestart={() => room.restartRound()}
           onThrow={room.throwItem}
+          onReact={room.react}
+          reactions={room.reactions}
           countdown={room.countdown}
           results={revealed ? state.results : null}
         />

@@ -15,6 +15,7 @@ import {
   parseAlias,
   parseCardValue,
   parseId,
+  parseReaction,
   parseRole,
   parseRoomCode,
   parseThrowable,
@@ -351,6 +352,23 @@ export function registerSocketHandlers(
           fromAlias: from.alias,
           toId: to.id,
           item,
+        });
+      }),
+    );
+
+    socket.on(
+      CLIENT_EVENTS.REACT,
+      guard(socket, (payload) => {
+        const { code, participantId } = context(socket);
+        const targetId = parseId(payload?.participantId);
+        const emoji = parseReaction(payload?.emoji);
+        const { room, from, to } = store.assertCanReact(code, participantId, targetId);
+        // Igual que el lanzamiento: se anima y se olvida, no toca la sala.
+        io.to(room.code).emit(SERVER_EVENTS.REACTED, {
+          fromId: from.id,
+          fromAlias: from.alias,
+          toId: to.id,
+          emoji,
         });
       }),
     );

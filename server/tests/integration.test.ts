@@ -147,6 +147,38 @@ describe("ciclo de vida de la sala", () => {
   });
 });
 
+describe("gestos sobre la mesa", () => {
+  it("reparte el emoticón a toda la sala, también sobre quien ya votó", async () => {
+    const host = await createRoom("Ana");
+    const guest = await joinRoom(host.credentials.roomCode, "Bea");
+    guest.socket.emit(CLIENT_EVENTS.VOTE_SUBMIT, { value: "5" });
+
+    const seen = waitFor<{ fromId: string; toId: string; emoji: string }>(
+      guest.socket,
+      SERVER_EVENTS.REACTED,
+    );
+    host.socket.emit(CLIENT_EVENTS.REACT, {
+      participantId: guest.credentials.participantId,
+      emoji: "\u{1f44f}",
+    });
+
+    const payload = await seen;
+    expect(payload.fromId).toBe(host.credentials.participantId);
+    expect(payload.toId).toBe(guest.credentials.participantId);
+    expect(payload.emoji).toBe("\u{1f44f}");
+  });
+
+  it("rechaza un emoticón que no está en la lista", async () => {
+    const host = await createRoom("Ana");
+    const error = waitFor<RoomError>(host.socket, SERVER_EVENTS.ROOM_ERROR);
+    host.socket.emit(CLIENT_EVENTS.REACT, {
+      participantId: host.credentials.participantId,
+      emoji: "\u{1f4a3}",
+    });
+    expect((await error).code).toBe("INVALID_PAYLOAD");
+  });
+});
+
 describe("votación en tiempo real", () => {
   it("con un solo jugador el servidor no deja revelar", async () => {
     const host = await createRoom("Ana");

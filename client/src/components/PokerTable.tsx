@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import type {
   PublicParticipant,
   PublicRoomState,
+  Reaction,
   RoundResults,
   Throwable,
 } from "@planincito/shared";
 import { cardLabel } from "./PokerCard";
 import { EyeIcon } from "./Icon";
-import { ThrowMenu } from "./ThrowMenu";
+import { SeatMenu, type SeatReaction } from "./SeatMenu";
 import { ResultsSummary } from "./VotingResults";
 
 /** Margen antes de atenuar a alguien que se acaba de desconectar. */
@@ -39,46 +40,50 @@ function useSettledOffline(connected: boolean): boolean {
 
 /**
  * Asiento: carta boca abajo mientras se vota y volteo 3D al revelar.
- * El alias va debajo de la carta, como en una mesa real.
+ * El alias va debajo de la carta, como en una mesa real. La carta siempre es
+ * un botón: abre el menú del asiento, desde donde se reacciona con un
+ * emoticón y, si esa persona sigue sin votar, se le lanza algo.
  */
 function Seat({
   participant,
   revealed,
   isMe,
+  reactions,
   onThrow,
+  onReact,
 }: {
   participant: PublicParticipant;
   revealed: boolean;
   isMe: boolean;
+  reactions: SeatReaction[];
   onThrow: (participantId: string, item: Throwable) => void;
+  onReact: (participantId: string, emoji: Reaction) => void;
 }) {
   const { alias, role, connected, hasVoted, vote, participantId } = participant;
   const [menuOpen, setMenuOpen] = useState(false);
   const offline = useSettledOffline(connected);
-  // En escritorio el menú se abre al pasar el ratón, así que el clic sólo
-  // debe abrirlo donde no hay puntero fino; si no, hacía falta pulsar dos veces.
+  // En escritorio el menú de lanzar se abre al pasar el ratón, así que el clic
+  // sólo debe abrirlo donde no hay puntero fino; si no, hacía falta pulsar dos
+  // veces. Reaccionar sí exige clic en todas partes: abrir un menú cada vez
+  // que el ratón cruza la mesa sería insoportable.
   const hoverCapable =
     typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches;
 
-  if (role === "spectator") {
-    return (
-      <li className={`seat${offline ? " seat--offline" : ""}`}>
-        <span
-          className="seat__card seat__card--spectator"
-          data-seat={participantId}
-          aria-label="Espectador"
-        >
-          <EyeIcon className="seat__eye" />
-        </span>
-        <span className={`seat__alias${isMe ? " seat__alias--me" : ""}`}>{alias}</span>
-      </li>
-    );
-  }
-
+  const spectator = role === "spectator";
+  // Sólo tiene sentido apurar a otra persona que aún no votó.
+  const canThrow = !spectator && !isMe && !hasVoted && !revealed;
   // El volteo sólo ocurre cuando hay carta que mostrar.
   const flipped = revealed && vote !== undefined;
-  // Sólo tiene sentido apurar a otra persona que aún no votó.
-  const canThrow = !isMe && !hasVoted && !revealed;
+
+  const situation = spectator
+    ? "espectador"
+    : revealed
+      ? vote !== undefined
+        ? cardLabel(vote)
+        : "sin voto"
+      : hasVoted
+        ? "ya votó"
+        : "pendiente";
 
   return (
     <li
@@ -89,46 +94,58 @@ function Seat({
       onMouseEnter={() => hoverCapable && canThrow && setMenuOpen(true)}
     >
       <div className="seat__slot">
-        {canThrow ? (
-          <button
-            type="button"
-            className={`seat__card seat__card--target${hasVoted ? " seat__card--voted" : ""}`}
-            data-seat={participantId}
-            aria-label={`Lanzar algo a ${alias}, que aún no ha votado`}
-            aria-expanded={menuOpen}
-            onClick={(event) => {
-              event.stopPropagation();
-              if (!hoverCapable) setMenuOpen((open) => !open);
-              else setMenuOpen(true);
-            }}
-          >
-            <span className="seat__face seat__face--back" />
-          </button>
-        ) : (
-          <div
-            className={`seat__card${hasVoted ? " seat__card--voted" : ""}${
-              flipped ? " seat__card--flipped" : ""
-            }`}
-            data-seat={participantId}
-            aria-label={
-              revealed
-                ? `${alias}: ${vote ? cardLabel(vote) : "sin voto"}`
-                : `${alias}: ${hasVoted ? "ya votó" : "pendiente"}`
-            }
-          >
-            <span className="seat__face seat__face--back" />
-            <span
-              className="seat__face seat__face--front"
-              data-value={vote !== undefined ? cardLabel(vote) : ""}
-            >
-              {vote !== undefined ? cardLabel(vote) : ""}
-            </span>
-          </div>
+        <button
+          type="button"
+          className={`seat__card seat__card--pick${
+            spectator ? " seat__card--spectator" : ""
+          }${hasVoted ? " seat__card--voted" : ""}${
+            flipped ? " seat__card--flipped" : ""
+          }`}
+          data-seat={participantId}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          aria-label={`${alias}: ${situation}. Reaccionar${
+            canThrow ? " o lanzarle algo" : ""
+          }`}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (!hoverCapable || !canThrow) setMenuOpen((open) => !open);
+            else setMenuOpen(true);
+          }}
+        >
+          {spectator ? (
+            <EyeIcon className="seat__eye" />
+          ) : (
+            <>
+              <span className="seat__face seat__face--back" />
+              <span
+                className="seat__face seat__face--front"
+                data-value={vote !== undefined ? cardLabel(vote) : ""}
+              >
+                {vote !== undefined ? cardLabel(vote) : ""}
+              </span>
+            </>
+          )}
+        </button>
+
+        {reactions.length > 0 && (
+          <span className="seat__reactions" aria-hidden="true">
+            {reactions.map((reaction) => (
+              <span key={reaction.id} className="seat__reaction">
+                {reaction.emoji}
+              </span>
+            ))}
+          </span>
         )}
 
-        {menuOpen && canThrow && (
-          <ThrowMenu
+        {menuOpen && (
+          <SeatMenu
             alias={alias}
+            canThrow={canThrow}
+            onReact={(emoji) => {
+              onReact(participantId, emoji);
+              setMenuOpen(false);
+            }}
             onPick={(item) => {
               onThrow(participantId, item);
               setMenuOpen(false);
@@ -149,6 +166,9 @@ type Props = {
   onReveal: () => void;
   onRestart: () => void;
   onThrow: (participantId: string, item: Throwable) => void;
+  onReact: (participantId: string, emoji: Reaction) => void;
+  /** Emoticones vivos ahora mismo, de cualquier asiento de la mesa. */
+  reactions: SeatReaction[];
   /** Segundos que faltan para revelar, o `null` si no hay cuenta atrás. */
   countdown: number | null;
   /** Resumen que se muestra en la mesa una vez reveladas las cartas. */
@@ -162,10 +182,14 @@ export function PokerTable({
   onReveal,
   onRestart,
   onThrow,
+  onReact,
+  reactions,
   countdown,
   results,
 }: Props) {
   const revealed = state.status === "revealed";
+  const reactionsFor = (participantId: string) =>
+    reactions.filter((reaction) => reaction.toId === participantId);
   const others = state.participants.filter((p) => p.participantId !== myId);
   const me = state.participants.find((p) => p.participantId === myId);
 
@@ -193,7 +217,9 @@ export function PokerTable({
             participant={participant}
             revealed={revealed}
             isMe={false}
+            reactions={reactionsFor(participant.participantId)}
             onThrow={onThrow}
+            onReact={onReact}
           />
         ))}
       </ul>
@@ -255,7 +281,9 @@ export function PokerTable({
             participant={participant}
             revealed={revealed}
             isMe={false}
+            reactions={reactionsFor(participant.participantId)}
             onThrow={onThrow}
+            onReact={onReact}
           />
         ))}
         {me && (
@@ -264,7 +292,9 @@ export function PokerTable({
             participant={me}
             revealed={revealed}
             isMe
+            reactions={reactionsFor(me.participantId)}
             onThrow={onThrow}
+            onReact={onReact}
           />
         )}
       </ul>

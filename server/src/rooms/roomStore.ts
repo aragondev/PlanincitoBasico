@@ -567,6 +567,28 @@ export class RoomStore extends EventEmitter {
   }
 
   /**
+   * Comprueba que se puede dejar un emoticón sobre esa carta. Aquí no hay
+   * más regla que seguir en la sala: felicitar a quien ya votó, o a uno
+   * mismo, es parte de la gracia.
+   */
+  assertCanReact(
+    code: string,
+    participantId: string,
+    targetId: string,
+  ): { room: Room; from: Participant; to: Participant } {
+    const room = this.requireRoom(code);
+    const from = this.requireParticipant(room, participantId);
+    const to = room.participants.get(targetId);
+    if (!to) {
+      throw new RoomOperationError(
+        "PARTICIPANT_NOT_FOUND",
+        "Ese participante ya no está en la sala.",
+      );
+    }
+    return { room, from, to };
+  }
+
+  /**
    * Barrido único de mantenimiento (§3.6): elimina participantes desconectados
    * pasado el margen y salas vacías pasado el suyo.
    */

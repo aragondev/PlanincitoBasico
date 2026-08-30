@@ -1273,7 +1273,7 @@ button.danger {
   color: var(--brand);
 }
 
-/* ---------- Lanzar objetos ---------- */
+/* ---------- Menú del asiento: reaccionar y lanzar ---------- */
 
 .seat__slot {
   position: relative;
@@ -1281,10 +1281,10 @@ button.danger {
   place-items: center;
 }
 
-/* La carta de quien falta por votar invita a que le lancen algo. */
-/* Es un <button>: hay que deshacer el radio de cápsula y el recorte, que
-   cortaban las esquinas del borde punteado de la carta. */
-.seat__card--target {
+/* Toda carta abre el menú del asiento, así que toda carta es un <button>:
+   hay que deshacer el radio de cápsula y el recorte, que cortaban las
+   esquinas del borde punteado de la carta. */
+.seat__card--pick {
   padding: 0;
   background: transparent;
   border: none;
@@ -1292,24 +1292,80 @@ button.danger {
   min-block-size: auto;
   overflow: visible;
   cursor: pointer;
-  transition: transform 0.15s var(--ease);
 }
 
-.seat__card--target::after {
+.seat__card--pick::after {
   content: none;
 }
 
+/* El marco del espectador sobrevive al reset de botón. */
+.seat__card--pick.seat__card--spectator {
+  border: 1px dashed var(--muted);
+  border-radius: 8px;
+}
+
+/* El realce no puede pisar el volteo: con la carta destapada hay que
+   conservar el giro o se daría la vuelta al pasar el ratón. */
 @media (hover: hover) and (pointer: fine) {
-  .seat__card--target:hover {
+  /* El volteo se toma su tiempo; el realce del ratón, no. */
+  .seat__card--pick:not(.seat__card--flipped) {
+    transition: transform 0.18s var(--ease);
+  }
+
+  .seat__card--pick:hover {
     transform: translateY(-3px);
+  }
+
+  .seat__card--pick.seat__card--flipped:hover {
+    transform: rotateY(180deg) translateY(-3px);
   }
 }
 
-.throwmenu {
+/* Emoticones dejados sobre la carta: se apoyan en su borde superior. */
+.seat__reactions {
+  position: absolute;
+  inset-block-start: -10px;
+  inset-inline: 0;
+  z-index: 15;
+  display: flex;
+  justify-content: center;
+  gap: 0.1rem;
+  pointer-events: none;
+}
+
+.seat__reaction {
+  font-size: 1rem;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 40%));
+  animation: reaction-in 0.42s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+
+@keyframes reaction-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.3);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.25);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.seatmenu {
   position: absolute;
   inset-block-end: calc(100% + 0.4rem);
-  z-index: 20;
+  /* Por encima del encabezado: con dos filas, el menú de la fila de arriba
+     llegaba a solaparlo y quedaba medio tapado. */
+  /* Centrado sobre la carta: con ocho emoticones, anclarlo al borde se
+     salía de la pantalla en los asientos de los extremos. */
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
   display: flex;
+  flex-direction: column;
   gap: 0.15rem;
   padding: 0.25rem;
   background: var(--surface-3);
@@ -1319,14 +1375,36 @@ button.danger {
   animation: menu-in 0.15s var(--ease);
 }
 
+/* La fila de arriba no tiene sitio por encima: ahí el menú se despliega
+   hacia la mesa, que es donde queda hueco. */
+.table__row:first-of-type .seatmenu {
+  inset-block-start: calc(100% + 0.4rem);
+  inset-block-end: auto;
+}
+
+.seatmenu__row {
+  display: grid;
+  grid-template-columns: repeat(4, 34px);
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+/* Los objetos que se lanzan caben en una fila, y así se distinguen de los
+   emoticones sin necesidad de rótulos. */
+.seatmenu__row--throw {
+  grid-template-columns: repeat(5, 34px);
+  padding-block-start: 0.2rem;
+  border-block-start: 1px solid var(--border);
+}
+
 @keyframes menu-in {
   from {
     opacity: 0;
-    transform: translateY(4px) scale(0.94);
+    transform: translateX(-50%) translateY(4px) scale(0.94);
   }
 }
 
-.throwmenu__item {
+.seatmenu__item {
   inline-size: 34px;
   block-size: 34px;
   min-block-size: 34px;
@@ -1341,7 +1419,7 @@ button.danger {
   overflow: visible;
 }
 
-.throwmenu__glyph {
+.seatmenu__glyph {
   inline-size: 20px;
   block-size: 20px;
   display: block;
@@ -1350,7 +1428,7 @@ button.danger {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .throwmenu__item:hover {
+  .seatmenu__item:hover {
     background: var(--surface-1);
     transform: scale(1.15);
   }
@@ -1368,6 +1446,9 @@ button.danger {
   /* El transform de la animación posiciona el elemento; este margen lo centra. */
   margin: -0.8rem 0 0 -0.8rem;
   filter: drop-shadow(0 2px 3px rgb(0 0 0 / 35%));
+  /* Sin esto se veía un instante en la esquina superior izquierda: el nodo
+     ya existe cuando la animación aún no lo ha colocado. */
+  opacity: 0;
 }
 
 .flight__glyph {
@@ -1377,21 +1458,47 @@ button.danger {
   line-height: 1;
 }
 
-.flight--impact {
-  animation: flight-impact 0.5s ease-out forwards;
+/* Lo que salta del golpe. Comparten origen y colocación con el proyectil:
+   los sitúa el transform de su animación, no el flujo del documento. */
+.shard,
+.shockwave,
+.splat {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 29;
+  pointer-events: none;
+  opacity: 0;
 }
 
-@keyframes flight-impact {
-  0% {
-    filter: none;
-  }
-  30% {
-    filter: brightness(1.6);
-  }
-  100% {
-    opacity: 0;
-    filter: none;
-  }
+.shard {
+  border-radius: 1px;
+  margin: -2px 0 0 -2px;
+}
+
+/* Las gotas son redondas; las astillas, alargadas. */
+.shard--drop {
+  border-radius: 50%;
+}
+
+.shockwave {
+  inline-size: 56px;
+  block-size: 56px;
+  margin: -28px 0 0 -28px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.splat {
+  inline-size: 30px;
+  block-size: 22px;
+  margin: -11px 0 0 -15px;
+  border-radius: 48% 52% 40% 60% / 60% 44% 56% 40%;
+  background: radial-gradient(
+    circle at 42% 38%,
+    rgb(255 95 82 / 95%),
+    rgb(184 40 34 / 88%) 70%
+  );
 }
 
 /* Aviso de versión nueva: sobre todo lo demás, pero sin tapar el mazo. */
