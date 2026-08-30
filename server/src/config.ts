@@ -39,8 +39,12 @@ export const config = {
    * segundos, y con márgenes cortos expulsaba a gente que seguía en la reunión.
    */
   emptyRoomGraceMs: num("EMPTY_ROOM_GRACE_MS", 3_600_000),
-  /** Sala con una sola persona desconectada: se libera en 5 minutos. */
-  loneParticipantGraceMs: num("LONE_PARTICIPANT_GRACE_MS", 300_000),
+  /**
+   * Sala con una sola persona desconectada. Con cinco minutos se perdía la
+   * sala de quien probaba solo y dejaba la pestaña en segundo plano: el móvil
+   * o el navegador cortan el WebSocket en segundos, y al volver ya no estaba.
+   */
+  loneParticipantGraceMs: num("LONE_PARTICIPANT_GRACE_MS", 900_000),
   /** Rondas conservadas por sala; el historial vive sólo mientras la sala. */
   maxRoundHistory: num("MAX_ROUND_HISTORY", 50),
   /** Jugadores mínimos para revelar: estimar en solitario no compara nada. */

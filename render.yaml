@@ -31,7 +31,7 @@ services:
       - key: DISCONNECTED_PARTICIPANT_GRACE_MS
         value: 3600000
       - key: LONE_PARTICIPANT_GRACE_MS
-        value: 300000
+        value: 900000
       - key: MIN_PLAYERS_TO_REVEAL
         value: 2
       - key: MAX_ROUND_HISTORY

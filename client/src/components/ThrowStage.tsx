@@ -143,10 +143,12 @@ const GLYPH: Partial<Record<Throwable, string>> = {
 
 /** Los mismos trazos del icono del menú, para dibujarlos en el lienzo. */
 const VECTORS: Partial<Record<Throwable, [string, string][]>> = {
+  // Morro a la derecha y eje horizontal: en vuelo el ángulo lo pone la
+  // velocidad, y con la pose inclinada del icono el avión volaba de lado.
   plane: [
-    ["M2 12 22 3l-5 18-4.5-6.5L2 12Z", "#f1f1f4"],
-    ["M22 3 12.5 14.5 12 21l-1.5-6.5L22 3Z", "#c8c8d2"],
-    ["M2 12 22 3l-11.5 11.5L2 12Z", "#ffffff"],
+    ["M1 4.5 23 12 6 12Z", "#ffffff"],
+    ["M1 19.5 23 12 6 12Z", "#c8c8d2"],
+    ["M6 12 23 12 6 13.2Z", "#9a9aa6"],
   ],
   arrow: [
     ["M3 11.2h14v1.6H3z", "#8a6a4a"],
@@ -206,8 +208,10 @@ const STEP = 1000 / 60;
 /** Aceleración de la gravedad del motor, en píxeles por paso al cuadrado. */
 const GRAVITY = 0.001 * STEP * STEP;
 /** Límites del vuelo, en pasos del motor: ni un tiro instantáneo ni un globo. */
-const MIN_STEPS = 14;
-const MAX_STEPS = 48;
+const MIN_STEPS = 18;
+const MAX_STEPS = 60;
+/** Cuánto por debajo de la carta arranca el tiro: la altura de la mesa. */
+const LOFT = 150;
 const STAGGER = 95;
 /** Cuánto aguanta cada resto antes de empezar a desvanecerse. */
 const PROJECTILE_TTL = 1500;
@@ -230,6 +234,8 @@ type Sprite = {
   bornAt: number;
   ttl: number;
   aimed: boolean;
+  /** Vuela hacia la izquierda: hay que reflejarlo, no ponerlo boca abajo. */
+  mirrored: boolean;
   /** El avión se arruga al chocar: encoge y deja de planear. */
   crumpled: number;
   hit: boolean;
@@ -243,11 +249,12 @@ type Shot = {
   fromLeft: boolean;
   filter: { category: number; mask: number; group: number };
   cx: number;
-  cy: number;
-  /** Borde superior de la carta: de ahí para arriba está el arco. */
-  top: number;
+  /** Altura a la que se apunta dentro de la carta. */
+  aimY: number;
   ceiling: number;
-  /** Cada proyectil de la andanada sale un poco más alto que el anterior. */
+  /** Suelo del tiro: por debajo está el mazo, y ahí no vuela nada. */
+  ground: number;
+  /** Cada proyectil de la andanada sale desde un poco más abajo. */
   lift: number;
 };
 
@@ -419,6 +426,7 @@ export function ThrowStage({
             bornAt: clock,
             ttl: SHARD_TTL,
             aimed: false,
+            mirrored: false,
             crumpled: 0,
             hit: true,
           });
@@ -428,6 +436,24 @@ export function ThrowStage({
 
       /** Choques del paso en curso, a resolver cuando el motor haya acabado. */
       const impacts: { sprite: Sprite; x: number; y: number; speed: number; seat: string }[] = [];
+
+      /**
+       * El proyectil llega de lado, así que toca el canto de la carta y el
+       * golpe se dibujaba fuera de ella. Se lleva el punto de impacto dentro
+       * de su silueta: es lo que hace que se lea como un golpe en la carta.
+       */
+      const onCard = (card: Body, x: number, y: number) => {
+        const rect = card.plugin.rect as {
+          left: number;
+          right: number;
+          top: number;
+          bottom: number;
+        };
+        return {
+          x: Math.min(Math.max(x, rect.left + 6), rect.right - 6),
+          y: Math.min(Math.max(y, rect.top + 6), rect.bottom - 6),
+        };
+      };
 
       const onCollision = (
         event: MatterTypes.IEventCollision<MatterTypes.Engine>,
@@ -443,10 +469,11 @@ export function ThrowStage({
             if (!other.isStatic || other.label !== "card") continue;
 
             sprite.hit = true;
+            const at = onCard(other, body.position.x, body.position.y);
             impacts.push({
               sprite,
-              x: body.position.x,
-              y: body.position.y,
+              x: at.x,
+              y: at.y,
               speed: Math.hypot(body.velocity.x, body.velocity.y),
               seat: other.plugin.seat as string,
             });
@@ -502,6 +529,13 @@ export function ThrowStage({
           if (profile.landing === "crumple") sprite.crumpled = 1;
           // A partir de aquí el aire cuenta: en vuelo estorbaba a la puntería.
           M.Body.set(sprite.body, "frictionAir", profile.air);
+          // Y se le quita casi toda la carrera: una carta de pie no devuelve
+          // la piedra media mesa, la para. Antes el rebote la mandaba a
+          // aterrizar sobre el asiento de al lado.
+          M.Body.setVelocity(sprite.body, {
+            x: sprite.body.velocity.x * 0.16,
+            y: Math.abs(sprite.body.velocity.y) * 0.25 + 1.2,
+          });
         }
       };
 
@@ -521,6 +555,9 @@ export function ThrowStage({
         // ver la andanada cruzar por ahí arriba no se entendía.
         const stage = document.querySelector(".room__stage");
         const ceiling = (stage?.getBoundingClientRect().top ?? 0) + 10;
+        const dock = document.querySelector(".dock");
+        const ground =
+          (dock?.getBoundingClientRect().top ?? window.innerHeight) - 24;
 
         const category = 1 << (categorySeq++ % 30);
         const filter = { category, mask: category, group: 0 };
@@ -532,7 +569,15 @@ export function ThrowStage({
           friction: 0.6,
           collisionFilter: filter,
         });
-        card.plugin = { seat: flight.toId };
+        card.plugin = {
+          seat: flight.toId,
+          rect: {
+            left: box.left,
+            right: box.right,
+            top: box.top,
+            bottom: box.bottom,
+          },
+        };
         const floor = M.Bodies.rectangle(
           cx,
           box.bottom + CARD_FOOT,
@@ -563,10 +608,12 @@ export function ThrowStage({
             fromLeft: index % 2 === 0,
             filter,
             cx,
-            cy,
-            top: cy - box.height / 2,
+            // Se apunta al tercio alto de la carta: el objeto entra cayendo
+            // sobre ella en vez de rozarle el canto por el medio.
+            aimY: box.top + box.height * 0.32,
             ceiling,
-            lift: index * 12,
+            ground,
+            lift: index * 16,
           });
           live.set(flight.id, (live.get(flight.id) ?? 0) + 1);
         }
@@ -576,21 +623,21 @@ export function ThrowStage({
       const fire = (shot: Shot) => {
         const profile = PROFILES[shot.item];
         const startX = shot.fromLeft ? -40 : window.innerWidth + 40;
-        // Sale desde justo encima de la carta y sube lo que quepa bajo el
-        // techo: cuanto más alto es el arco, más lento y más creíble el tiro.
-        const startY = Math.max(shot.top - 18 - shot.lift, shot.ceiling);
-        const rise = Math.max(0, startY - shot.ceiling);
+        // Sale a la altura de la mesa y se lanza en globo, con la cima justo
+        // bajo el encabezado: así llega a la carta cayendo sobre ella. Antes
+        // salía por encima y entraba casi horizontal, de refilón por el canto.
+        // Nunca por debajo del mazo: un tomate cruzando por encima de las
+        // cartas de la mano propia no se entiende.
+        const startY = Math.min(shot.aimY + LOFT + shot.lift, shot.ground);
+        const apexY = shot.ceiling + 20;
         const dx = shot.cx - startX;
-        const dy = shot.cy - startY;
-        const apex = -Math.sqrt(2 * GRAVITY * rise);
+        const dy = shot.aimY - startY;
+        // Subida hasta la cima y bajada hasta la carta: el tiempo de vuelo
+        // sale de las dos mitades del arco.
+        const climb = Math.sqrt((2 * Math.max(0, startY - apexY)) / GRAVITY);
+        const fall = Math.sqrt((2 * Math.max(0, shot.aimY - apexY)) / GRAVITY);
         const steps = Math.round(
-          Math.max(
-            MIN_STEPS,
-            Math.min(
-              MAX_STEPS,
-              (-apex + Math.sqrt(apex * apex + 2 * GRAVITY * dy)) / GRAVITY,
-            ),
-          ),
+          Math.max(MIN_STEPS, Math.min(MAX_STEPS, climb + fall)),
         );
 
         const body =
@@ -629,6 +676,7 @@ export function ThrowStage({
           bornAt: clock,
           ttl: PROJECTILE_TTL,
           aimed: profile.aimed,
+          mirrored: !shot.fromLeft,
           crumpled: 0,
           hit: false,
         });
@@ -773,6 +821,10 @@ export function ThrowStage({
             context.restore();
             continue;
           }
+
+          // Hacia la izquierda el ángulo es de 180°, y girar un avión medio
+          // giro lo deja boca abajo. Lo que corresponde es reflejarlo.
+          if (sprite.aimed && sprite.mirrored) context.scale(1, -1);
 
           const glyph = GLYPH[sprite.item];
           if (glyph) {

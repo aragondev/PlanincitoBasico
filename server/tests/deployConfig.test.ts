@@ -42,4 +42,13 @@ describe("render.yaml y config.ts no deben divergir", () => {
       expect(Number(valor)).toBe(esperado);
     });
   }
+
+  /**
+   * Quien prueba solo y deja la pestaña en segundo plano pierde el WebSocket
+   * en segundos; con márgenes cortos, al volver la sala ya no existía. Que
+   * nadie lo baje sin darse cuenta de lo que arrastra.
+   */
+  it("una sala de una sola persona aguanta al menos un cuarto de hora", () => {
+    expect(config.loneParticipantGraceMs).toBeGreaterThanOrEqual(900_000);
+  });
 });
