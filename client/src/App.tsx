@@ -20,6 +20,8 @@ export function App() {
   const { theme, toggle: toggleTheme } = useTheme();
   const { updateAvailable, reload } = useAppUpdate();
   const [secretStored, setSecretStored] = useState(hasStoredAccessSecret);
+  /** Código de la última sala, para dejarlo escrito al volver al inicio. */
+  const [lastCode, setLastCode] = useState("");
 
   // La frase se guarda al entrar por primera vez, así que hay que releerla
   // cada vez que se vuelve a la portada, no sólo al arrancar.
@@ -32,6 +34,18 @@ export function App() {
   useEffect(() => {
     if (room.state && room.state.code !== hashCode) navigateToRoom(room.state.code);
   }, [room.state, hashCode]);
+
+  const roomGone = room.status === "room-gone";
+  // Al perder la sala el hash todavía tiene su código; se aprovecha antes de
+  // limpiarlo para dejarlo escrito en la portada.
+  const codeToOffer = roomGone && hashCode ? hashCode : lastCode;
+
+  // Sin sala no se puede seguir ofreciendo entrar a ella: se vuelve al inicio.
+  useEffect(() => {
+    if (!roomGone) return;
+    if (hashCode) setLastCode(hashCode);
+    navigateHome();
+  }, [roomGone, hashCode]);
 
   const busy = room.status === "connecting" || room.status === "starting-server";
 
@@ -89,9 +103,9 @@ export function App() {
           theme={theme}
           onToggleTheme={toggleTheme}
           onLeave={() => {
-            // Sin limpiar el hash quedaba la URL de la sala, así que la vista
-            // de "entrar a esta sala" reemplazaba a la portada y no había
-            // dónde escribir otro código.
+            // Sin limpiar el hash quedaba la URL de la sala y la portada no
+            // llegaba a verse.
+            setLastCode(room.state!.code);
             room.leaveRoom();
             navigateHome();
           }}
@@ -102,18 +116,14 @@ export function App() {
     );
   }
 
-  if (hashCode) {
+  if (hashCode && !roomGone) {
     return (
       <>
         <JoinRoomPage
           code={hashCode}
           status={room.status}
           busy={busy}
-          errorMessage={
-            room.status === "room-gone"
-              ? "La sala ya no existe. Puedes crear una nueva."
-              : (room.error?.message ?? null)
-          }
+          errorMessage={room.error?.message ?? null}
           onJoin={(alias, asSpectator) => room.joinRoom(hashCode, alias, asSpectator)}
           onBack={() => {
             room.reset();
@@ -131,6 +141,7 @@ export function App() {
       <HomePage
         status={room.status}
         busy={busy}
+        lastCode={codeToOffer}
         secretStored={secretStored}
         onForgetSecret={() => {
           room.forgetAccessSecret();

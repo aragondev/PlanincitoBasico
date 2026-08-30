@@ -148,6 +148,43 @@ test("en pantalla retina el lienzo mide lo que la ventana", async ({ browser }) 
   await invitadoCtx.close();
 });
 
+test("al perder la sala se vuelve al inicio con el código escrito", async ({ browser }) => {
+  const codigoInput = 'input[aria-label="Código de la sala"]';
+
+  // Por enlace de invitación a una sala que ya no existe.
+  const visita = await browser.newPage();
+  await visita.goto("./#/room/ZZZZZZ");
+  await visita.getByLabel("Tu alias").fill("Ana");
+  await visita.getByRole("button", { name: "Entrar" }).click();
+
+  await expect(visita.locator(".home")).toBeVisible();
+  await expect(visita.locator(codigoInput)).toHaveValue("ZZZZZZ");
+  expect(new URL(visita.url()).hash).not.toContain("/room/");
+
+  // Y estando dentro, cuando el facilitador te expulsa.
+  const anfitrion = await browser.newPage();
+  await anfitrion.goto("./");
+  await anfitrion.getByLabel("Tu alias").fill("Ana");
+  await anfitrion.getByRole("button", { name: "Crear sala" }).click();
+  const codigo = (await anfitrion.locator(".room-header__code strong").textContent())!.trim();
+
+  const invitado = await browser.newPage();
+  await invitado.goto(`./#/room/${codigo}`);
+  await invitado.getByLabel("Tu alias").fill("Bea");
+  await invitado.getByRole("button", { name: "Entrar" }).click();
+  await expect(anfitrion.locator(".seat")).toHaveCount(2);
+
+  await anfitrion.getByRole("button", { name: /Participantes/ }).click();
+  await anfitrion
+    .locator(".participant", { hasText: "Bea" })
+    .getByRole("button", { name: "Expulsar" })
+    .click();
+  await anfitrion.locator(".dialog").getByRole("button", { name: "Expulsar" }).click();
+
+  await expect(invitado.locator(".home")).toBeVisible();
+  await expect(invitado.locator(codigoInput)).toHaveValue(codigo);
+});
+
 test("un código inexistente no saca al usuario de la portada", async ({ page }) => {
   await page.goto("./");
   await page.getByLabel("Tu alias").fill("Ana");

@@ -410,6 +410,14 @@ button.danger {
   flex: 0 0 auto;
 }
 
+/** Nota bajo el campo de código, cuando viene escrito de la sala anterior. */
+.home__hint {
+  margin: 0.35rem 0 0;
+  color: var(--muted-dim);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .home__secret {
   margin-block-start: 0.75rem;
   padding-inline: 0.25rem;
@@ -1685,6 +1693,8 @@ button.danger {
 .dialog__backdrop {
   position: fixed;
   inset: 0;
+  /* Sobre el panel lateral: la confirmación de expulsar sale desde él. */
+  z-index: 70;
   background: var(--scrim);
   display: grid;
   place-items: center;

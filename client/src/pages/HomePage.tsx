@@ -7,6 +7,8 @@ import type { ConnectionStatus as Status } from "../hooks/useRoom";
 type Props = {
   status: Status;
   busy: boolean;
+  /** Código de la sala anterior, ya escrito en el campo para reintentar. */
+  lastCode: string;
   /** Hay una frase de acceso recordada de una visita anterior. */
   secretStored: boolean;
   onForgetSecret: () => void;
@@ -21,6 +23,7 @@ type Props = {
 export function HomePage({
   status,
   busy,
+  lastCode,
   secretStored,
   onForgetSecret,
   onCreate,
@@ -28,7 +31,7 @@ export function HomePage({
 }: Props) {
   // Se precarga el último alias usado: en un equipo se repite siempre.
   const [alias, setAlias] = useState(loadLastAlias);
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(lastCode);
   const [asSpectator, setAsSpectator] = useState(false);
   const [aliasMissing, setAliasMissing] = useState(false);
   const aliasRef = useRef<HTMLInputElement>(null);
@@ -128,6 +131,12 @@ export function HomePage({
             Entrar
           </button>
         </form>
+
+        {lastCode !== "" && (
+          <p className="home__hint">
+            Es el código de tu sala anterior; bórralo para entrar a otra.
+          </p>
+        )}
       </div>
 
       {secretStored && (
