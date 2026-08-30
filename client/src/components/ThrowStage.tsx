@@ -49,7 +49,7 @@ type Profile = {
 
 const PROFILES: Record<Throwable, Profile> = {
   plane: {
-    radius: 15,
+    radius: 11,
     shape: "box",
     density: 0.0004,
     restitution: 0.12,
@@ -66,7 +66,7 @@ const PROFILES: Record<Throwable, Profile> = {
     ring: "rgb(255 255 255 / 50%)",
   },
   arrow: {
-    radius: 16,
+    radius: 12,
     shape: "box",
     density: 0.0022,
     restitution: 0.05,
@@ -83,7 +83,7 @@ const PROFILES: Record<Throwable, Profile> = {
     ring: "rgb(226 88 95 / 55%)",
   },
   paper: {
-    radius: 10,
+    radius: 8,
     shape: "circle",
     density: 0.0007,
     restitution: 0.3,
@@ -100,7 +100,7 @@ const PROFILES: Record<Throwable, Profile> = {
     ring: "rgb(255 255 255 / 45%)",
   },
   tomato: {
-    radius: 11,
+    radius: 8.5,
     shape: "circle",
     density: 0.0018,
     restitution: 0.04,
@@ -117,7 +117,7 @@ const PROFILES: Record<Throwable, Profile> = {
     ring: "rgb(216 51 44 / 60%)",
   },
   rock: {
-    radius: 12,
+    radius: 9,
     shape: "circle",
     density: 0.006,
     restitution: 0.1,
@@ -219,6 +219,13 @@ const SHARD_TTL = 700;
 const FADE = 480;
 /** Media carta: el suelo está a los pies del asiento, no al fondo de la sala. */
 const CARD_FOOT = 50;
+/**
+ * Ancho del cuerpo con el que choca el objeto. La carta se ve de canto, así
+ * que un muro de su ancho real paraba el objeto en la esquina, medio fuera.
+ * Con un núcleo estrecho el objeto entra hasta quedar **sobre** la carta, que
+ * es lo que se espera de un tiro dirigido a ella.
+ */
+const CARD_CORE = 10;
 /** Red de seguridad: ningún lanzamiento vive más que esto. */
 const MAX_LIFE = 5200;
 
@@ -393,7 +400,7 @@ export function ThrowStage({
         const profile = PROFILES[sprite.item];
         const count = reduced ? 0 : profile.shards;
         for (let index = 0; index < count; index += 1) {
-          const size = between(2.5, profile.shardRound ? 7 : 6);
+          const size = between(2, profile.shardRound ? 5 : 4.5);
           const body = profile.shardRound
             ? M.Bodies.circle(x, y, size / 2, {})
             : M.Bodies.rectangle(x, y, size, size * 0.6, {});
@@ -503,13 +510,13 @@ export function ThrowStage({
                 flightId: sprite.flightId,
                 x,
                 y,
-                radius: between(11, 15),
+                radius: between(8, 11),
                 angle: between(0, Math.PI),
                 bornAt: clock,
                 blobs: Array.from({ length: 5 }, () => ({
-                  dx: between(-9, 9),
-                  dy: between(-7, 7),
-                  r: between(3, 7),
+                  dx: between(-7, 7),
+                  dy: between(-5, 5),
+                  r: between(2, 5),
                 })),
               });
             }
@@ -562,7 +569,7 @@ export function ThrowStage({
         const category = 1 << (categorySeq++ % 30);
         const filter = { category, mask: category, group: 0 };
 
-        const card = M.Bodies.rectangle(cx, cy, box.width, box.height, {
+        const card = M.Bodies.rectangle(cx, cy, CARD_CORE, box.height, {
           isStatic: true,
           label: "card",
           restitution: 0.35,
@@ -769,7 +776,7 @@ export function ThrowStage({
           context.strokeStyle = ring.color;
           context.lineWidth = 2.5 * (1 - progress) + 0.5;
           context.beginPath();
-          context.arc(ring.x, ring.y, 6 + progress * 34, 0, Math.PI * 2);
+          context.arc(ring.x, ring.y, 4 + progress * 22, 0, Math.PI * 2);
           context.stroke();
           context.restore();
         }
