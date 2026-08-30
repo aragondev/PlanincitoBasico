@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 
 /** Cada cuánto se comprueba si hay una versión nueva publicada. */
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
+/** Margen mínimo entre comprobaciones seguidas, para no pedir en cada foco. */
+const CHECK_THROTTLE_MS = 20 * 1000;
 
 /** Nombre del bundle que está ejecutándose ahora mismo. */
 function currentBundle(): string | null {
@@ -35,8 +37,12 @@ export function useAppUpdate(): { updateAvailable: boolean; reload: () => void }
     if (!running || running.includes("/src/")) return undefined;
 
     let cancelled = false;
+    let lastCheck = 0;
     const check = async () => {
       if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastCheck < CHECK_THROTTLE_MS) return;
+      lastCheck = now;
       try {
         const published = await publishedBundle();
         if (!cancelled && published && published !== running) {
@@ -48,14 +54,18 @@ export function useAppUpdate(): { updateAvailable: boolean; reload: () => void }
     };
 
     const timer = setInterval(check, CHECK_INTERVAL_MS);
-    // También al volver a la pestaña, que es cuando más se nota el desfase.
+    // También al volver a la aplicación, que es cuando más se nota el desfase.
+    // `visibilitychange` cubre el cambio de pestaña; volver desde otra
+    // ventana no lo dispara, y ese es el caso más habitual en escritorio.
     document.addEventListener("visibilitychange", check);
+    window.addEventListener("focus", check);
     void check();
 
     return () => {
       cancelled = true;
       clearInterval(timer);
       document.removeEventListener("visibilitychange", check);
+      window.removeEventListener("focus", check);
     };
   }, []);
 

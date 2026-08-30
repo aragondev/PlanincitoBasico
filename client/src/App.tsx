@@ -145,6 +145,7 @@ export function App() {
         }}
       />
       {feedback}
+      {updateBanner}
     </>
   );
 }
