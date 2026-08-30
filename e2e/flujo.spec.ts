@@ -35,6 +35,21 @@ test("dos personas estiman una historia y revelan", async ({ browser }) => {
   await expect(invitado.locator(".table__surface")).toBeVisible();
   await expect(anfitrion.locator(".seat")).toHaveCount(2);
 
+  // Gestos sobre la carta ajena: el emoticón se queda pegado y lo ven ambos;
+  // el lanzamiento monta su escenario de física y se retira solo. Un fallo del
+  // lienzo no se ve desde fuera, así que aquí es donde tiene que saltar.
+  await anfitrion.locator(".seat__card--pick").first().click();
+  await anfitrion.getByRole("menuitem", { name: /Elegir un emoticón/ }).click();
+  await anfitrion.getByRole("menuitemradio", { name: /Reaccionar con 🎉/ }).click();
+  await expect(invitado.locator(".seat__reaction")).toHaveCount(1);
+
+  await anfitrion.locator(".seat__card--pick").first().click();
+  await anfitrion.getByRole("menuitem", { name: /Tomate/ }).click();
+  await expect(anfitrion.locator("canvas.throwstage")).toBeAttached();
+  await expect(anfitrion.locator("canvas.throwstage")).toHaveCount(0, {
+    timeout: 8000,
+  });
+
   // Votar oculto: el otro ve que votó, no qué votó.
   await invitado.locator(".deck__card", { hasText: /^8$/ }).click();
   await expect(anfitrion.locator(".seat__card--voted")).toHaveCount(1);

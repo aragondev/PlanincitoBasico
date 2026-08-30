@@ -117,3 +117,14 @@ export function EyeIcon(props: Props) {
     </Svg>
   );
 }
+
+/** Carita para abrir el listado de emoticones de un asiento. */
+export function ReactionIcon(props: Props) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M8.6 14.2a4.2 4.2 0 0 0 6.8 0" />
+      <path d="M9.2 9.6h.01M14.8 9.6h.01" />
+    </Svg>
+  );
+}

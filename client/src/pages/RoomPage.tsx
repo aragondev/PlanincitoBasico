@@ -6,7 +6,7 @@ import { ConfirmationDialog, useConfirmation } from "../components/Feedback";
 import { ParticipantList } from "../components/ParticipantList";
 import { PokerTable } from "../components/PokerTable";
 import { RoomHeader } from "../components/RoomHeader";
-import { ThrowFlight } from "../components/ThrowFlight";
+import { ThrowStage } from "../components/ThrowStage";
 import { VotingResults } from "../components/VotingResults";
 import type { RoomApi } from "../hooks/useRoom";
 import type { Theme } from "../hooks/useTheme";
@@ -117,7 +117,6 @@ export function RoomPage({
           onRestart={() => room.restartRound()}
           onThrow={room.throwItem}
           onReact={room.react}
-          reactions={room.reactions}
           countdown={room.countdown}
           results={revealed ? state.results : null}
         />
@@ -147,9 +146,9 @@ export function RoomPage({
         )}
       </div>
 
-      {room.flights.map((flight) => (
-        <ThrowFlight key={flight.id} flight={flight} onDone={room.endFlight} />
-      ))}
+      {room.flights.length > 0 && (
+        <ThrowStage flights={room.flights} onDone={room.endFlight} />
+      )}
 
       {celebrating && <Celebration onDone={() => setCelebrating(false)} />}
 

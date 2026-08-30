@@ -4,6 +4,7 @@ import type {
   ParticipantRole,
   PublicParticipant,
   PublicRoomState,
+  Reaction,
   RoundHistoryEntry,
 } from "@planincito/shared";
 import { generateId, generateReconnectionToken, generateRoomCode } from "./codes.js";
@@ -30,6 +31,11 @@ export type Room = {
   round: number;
   participants: Map<string, Participant>;
   votes: Map<string, CardValue>;
+  /**
+   * Emoticones puestos sobre las cartas: destino → autor → emoticón. Uno por
+   * autor y carta, y el orden de inserción es el que se ve en la mesa.
+   */
+  reactions: Map<string, Map<string, Reaction>>;
   createdAt: number;
   lastActivityAt: number;
   emptySince?: number;
@@ -176,6 +182,7 @@ export class RoomStore extends EventEmitter {
       round: 1,
       participants: new Map([[facilitator.id, facilitator]]),
       votes: new Map(),
+      reactions: new Map(),
       createdAt: timestamp,
       lastActivityAt: timestamp,
       history: [],
@@ -277,6 +284,12 @@ export class RoomStore extends EventEmitter {
   private removeParticipant(room: Room, participantId: string): void {
     room.participants.delete(participantId);
     room.votes.delete(participantId);
+    // Sus emoticones se van con él: los que recibió y los que repartió.
+    room.reactions.delete(participantId);
+    for (const [targetId, authors] of room.reactions) {
+      authors.delete(participantId);
+      if (authors.size === 0) room.reactions.delete(targetId);
+    }
     this.touch(room);
 
     if (room.facilitatorId === participantId) {
@@ -451,6 +464,8 @@ export class RoomStore extends EventEmitter {
     const room = this.requireRoom(code);
     this.requireFacilitator(room, participantId);
     room.votes.clear();
+    // Mesa limpia: los emoticones eran de la ronda que acaba de cerrarse.
+    room.reactions.clear();
     room.status = "voting";
     room.round += 1;
     if (topic !== undefined) room.topic = topic;
@@ -567,25 +582,40 @@ export class RoomStore extends EventEmitter {
   }
 
   /**
-   * Comprueba que se puede dejar un emoticón sobre esa carta. Aquí no hay
-   * más regla que seguir en la sala: felicitar a quien ya votó, o a uno
+   * Pone el emoticón sobre esa carta, o lo quita si ya era el mismo. Aquí no
+   * hay más regla que seguir en la sala: felicitar a quien ya votó, o a uno
    * mismo, es parte de la gracia.
    */
-  assertCanReact(
+  toggleReaction(
     code: string,
     participantId: string,
     targetId: string,
-  ): { room: Room; from: Participant; to: Participant } {
+    emoji: Reaction,
+  ): Room {
     const room = this.requireRoom(code);
-    const from = this.requireParticipant(room, participantId);
-    const to = room.participants.get(targetId);
-    if (!to) {
+    this.requireParticipant(room, participantId);
+    if (!room.participants.has(targetId)) {
       throw new RoomOperationError(
         "PARTICIPANT_NOT_FOUND",
         "Ese participante ya no está en la sala.",
       );
     }
-    return { room, from, to };
+
+    const authors = room.reactions.get(targetId) ?? new Map<string, Reaction>();
+    if (authors.get(participantId) === emoji) {
+      authors.delete(participantId);
+    } else {
+      // Se borra antes de volver a poner: así el emoticón nuevo entra por el
+      // final de la fila y no ocupa el sitio del que sustituye.
+      authors.delete(participantId);
+      authors.set(participantId, emoji);
+    }
+
+    if (authors.size === 0) room.reactions.delete(targetId);
+    else room.reactions.set(targetId, authors);
+
+    this.touch(room);
+    return room;
   }
 
   /**
@@ -663,6 +693,9 @@ export class RoomStore extends EventEmitter {
           role: participant.role,
           connected: participant.connected,
           hasVoted: vote !== undefined,
+          reactions: [...(room.reactions.get(participant.id) ?? [])].map(
+            ([fromId, emoji]) => ({ fromId, emoji }),
+          ),
         };
         if (revealed && vote !== undefined) publicParticipant.vote = vote;
         return publicParticipant;

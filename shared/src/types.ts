@@ -37,6 +37,8 @@ export type PublicParticipant = {
   connected: boolean;
   hasVoted: boolean;
   vote?: CardValue;
+  /** Emoticones puestos sobre su carta, en el orden en que se pusieron. */
+  reactions: CardReaction[];
 };
 
 export type VoteDistributionEntry = {
@@ -145,6 +147,15 @@ export const REACTIONS = [
 ] as const;
 
 export type Reaction = (typeof REACTIONS)[number];
+
+/**
+ * Emoticón que alguien dejó sobre una carta. Cada persona tiene uno solo por
+ * carta: elegir otro lo sustituye y repetir el mismo lo quita.
+ */
+export type CardReaction = {
+  fromId: string;
+  emoji: Reaction;
+};
 
 /** Credenciales temporales guardadas en `sessionStorage` (§9). */
 export type SessionCredentials = {

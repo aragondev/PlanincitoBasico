@@ -20,8 +20,7 @@ import {
 } from "../socket/accessSecret";
 import { saveLastAlias } from "../socket/lastAlias";
 import { clearSession, loadSession, saveSession } from "../socket/session";
-import type { SeatReaction } from "../components/SeatMenu";
-import type { Flight } from "../components/ThrowFlight";
+import type { Flight } from "../components/ThrowStage";
 
 export type ConnectionStatus =
   | "idle"
@@ -40,11 +39,6 @@ type Intent =
 
 /** Tras este tiempo sin conectar asumimos que Render está despertando (§3.2). */
 const COLD_START_MS = 4000;
-
-/** Lo que aguanta un emoticón sobre la carta antes de irse solo. */
-const REACTION_MS = 4000;
-/** Emoticones simultáneos por carta: los viejos ceden el sitio a los nuevos. */
-const REACTIONS_PER_SEAT = 3;
 
 export type RoomApi = {
   status: ConnectionStatus;
@@ -77,8 +71,10 @@ export type RoomApi = {
   flights: Flight[];
   throwItem: (participantId: string, item: Throwable) => void;
   endFlight: (id: number) => void;
-  /** Emoticones puestos sobre las cartas; caducan solos a los pocos segundos. */
-  reactions: SeatReaction[];
+  /**
+   * Pone el emoticón sobre esa carta; el mismo otra vez lo quita. Vive en el
+   * estado de la sala, así que se lee de `state.participants[].reactions`.
+   */
   react: (participantId: string, emoji: Reaction) => void;
   dismissError: () => void;
   submitAccessSecret: (secret: string) => void;
@@ -108,8 +104,6 @@ export function useRoom(): RoomApi {
   const [booting, setBooting] = useState(() => loadSession() !== null);
   const [history, setHistory] = useState<RoundHistoryEntry[]>([]);
   const [flights, setFlights] = useState<Flight[]>([]);
-  const [reactions, setReactions] = useState<SeatReaction[]>([]);
-  const reactionTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   /** Segundos que faltan para revelar, o `null` si no hay cuenta atrás. */
   const [countdown, setCountdown] = useState<number | null>(null);
   const countdownTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -125,7 +119,6 @@ export function useRoom(): RoomApi {
    */
   const pendingVote = useRef<{ value: CardValue } | { retract: true } | null>(null);
   const flightId = useRef(0);
-  const reactionId = useRef(0);
 
   if (socketRef.current === null) socketRef.current = createSocket();
   const socket = socketRef.current;
@@ -302,30 +295,6 @@ export function useRoom(): RoomApi {
       setFlights((current) => [...current.slice(-11), flight]);
     };
 
-    const onReacted = (payload: { toId: string; emoji: Reaction }) => {
-      reactionId.current += 1;
-      const reaction: SeatReaction = {
-        id: reactionId.current,
-        toId: payload.toId,
-        emoji: payload.emoji,
-      };
-      setReactions((current) => {
-        // Cada carta guarda sólo los últimos: si no, se apilarían sin fin.
-        const onCard = current.filter((item) => item.toId === reaction.toId);
-        const excess = onCard.slice(0, onCard.length + 1 - REACTIONS_PER_SEAT);
-        const dropped = new Set(excess.map((item) => item.id));
-        return [...current.filter((item) => !dropped.has(item.id)), reaction];
-      });
-
-      const timer = setTimeout(() => {
-        reactionTimers.current = reactionTimers.current.filter(
-          (pending) => pending !== timer,
-        );
-        setReactions((current) => current.filter((item) => item.id !== reaction.id));
-      }, REACTION_MS);
-      reactionTimers.current.push(timer);
-    };
-
     const onRestarting = (payload: { message: string }) => setNotice(payload.message);
 
     const onRoundRestarted = (payload: { state: PublicRoomState }) => {
@@ -351,7 +320,6 @@ export function useRoom(): RoomApi {
     socket.on(SERVER_EVENTS.ROOM_CLOSED, onClosed);
     socket.on(SERVER_EVENTS.SERVER_RESTARTING, onRestarting);
     socket.on(SERVER_EVENTS.THROWN, onThrown);
-    socket.on(SERVER_EVENTS.REACTED, onReacted);
     socket.on(SERVER_EVENTS.COUNTDOWN_STARTED, onCountdown);
 
     return () => {
@@ -360,7 +328,6 @@ export function useRoom(): RoomApi {
       if (coldStartTimer.current) clearTimeout(coldStartTimer.current);
       if (revealTimer.current) clearTimeout(revealTimer.current);
       for (const timer of countdownTimers.current) clearTimeout(timer);
-      for (const timer of reactionTimers.current) clearTimeout(timer);
     };
   }, [socket, dispatchIntent, armColdStartTimer]);
 
@@ -449,9 +416,6 @@ export function useRoom(): RoomApi {
     if (revealTimer.current) clearTimeout(revealTimer.current);
     for (const timer of countdownTimers.current) clearTimeout(timer);
     countdownTimers.current = [];
-    for (const timer of reactionTimers.current) clearTimeout(timer);
-    reactionTimers.current = [];
-    setReactions([]);
     setCountdown(null);
     clearSession();
     setAccessRejected(false);
@@ -532,7 +496,6 @@ export function useRoom(): RoomApi {
         emitOrWarn(CLIENT_EVENTS.THROW, { participantId, item }),
       endFlight: (id) =>
         setFlights((current) => current.filter((flight) => flight.id !== id)),
-      reactions,
       react: (participantId, emoji) =>
         emitOrWarn(CLIENT_EVENTS.REACT, { participantId, emoji }),
       dismissError: () => setError(null),
@@ -546,7 +509,7 @@ export function useRoom(): RoomApi {
     [
       status, state, credentials, error, notice, accessRejected, booting,
       myId, isFacilitator,
-      effectiveVote, history, flights, reactions, countdown, start, emit, emitOrWarn,
+      effectiveVote, history, flights, countdown, start, emit, emitOrWarn,
       submitAccessSecret, reset,
     ],
   );

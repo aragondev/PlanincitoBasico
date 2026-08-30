@@ -121,6 +121,7 @@ export function registerSocketHandlers(
           role: participant.role,
           connected: true,
           hasVoted: false,
+          reactions: [],
         },
       state,
     });
@@ -362,14 +363,9 @@ export function registerSocketHandlers(
         const { code, participantId } = context(socket);
         const targetId = parseId(payload?.participantId);
         const emoji = parseReaction(payload?.emoji);
-        const { room, from, to } = store.assertCanReact(code, participantId, targetId);
-        // Igual que el lanzamiento: se anima y se olvida, no toca la sala.
-        io.to(room.code).emit(SERVER_EVENTS.REACTED, {
-          fromId: from.id,
-          fromAlias: from.alias,
-          toId: to.id,
-          emoji,
-        });
+        // El emoticón se queda en la carta, así que viaja con el estado: quien
+        // entre después, o vuelva de una desconexión, lo ve igual que el resto.
+        broadcastState(store.toggleReaction(code, participantId, targetId, emoji));
       }),
     );
 

@@ -148,24 +148,75 @@ describe("ciclo de vida de la sala", () => {
 });
 
 describe("gestos sobre la mesa", () => {
-  it("reparte el emoticón a toda la sala, también sobre quien ya votó", async () => {
+  /** El emoticón que `autor` dejó sobre la carta de `destino`, si queda alguno. */
+  function reactionOn(state: PublicRoomState, destino: string, autor: string) {
+    return state.participants
+      .find((p) => p.participantId === destino)
+      ?.reactions.find((r) => r.fromId === autor)?.emoji;
+  }
+
+  it("pega el emoticón en la carta y lo ve toda la sala, incluso tras votar", async () => {
     const host = await createRoom("Ana");
     const guest = await joinRoom(host.credentials.roomCode, "Bea");
     guest.socket.emit(CLIENT_EVENTS.VOTE_SUBMIT, { value: "5" });
 
-    const seen = waitFor<{ fromId: string; toId: string; emoji: string }>(
+    const seen = waitFor<{ state: PublicRoomState }>(
       guest.socket,
-      SERVER_EVENTS.REACTED,
+      SERVER_EVENTS.ROOM_STATE,
     );
     host.socket.emit(CLIENT_EVENTS.REACT, {
       participantId: guest.credentials.participantId,
       emoji: "\u{1f44f}",
     });
 
-    const payload = await seen;
-    expect(payload.fromId).toBe(host.credentials.participantId);
-    expect(payload.toId).toBe(guest.credentials.participantId);
-    expect(payload.emoji).toBe("\u{1f44f}");
+    const { state } = await seen;
+    expect(
+      reactionOn(
+        state,
+        guest.credentials.participantId,
+        host.credentials.participantId,
+      ),
+    ).toBe("\u{1f44f}");
+  });
+
+  it("el mismo emoticón lo quita y otro distinto lo sustituye", async () => {
+    const host = await createRoom("Ana");
+    const guest = await joinRoom(host.credentials.roomCode, "Bea");
+    const target = guest.credentials.participantId;
+    const author = host.credentials.participantId;
+
+    const react = async (emoji: string) => {
+      const seen = waitFor<{ state: PublicRoomState }>(
+        host.socket,
+        SERVER_EVENTS.ROOM_STATE,
+      );
+      host.socket.emit(CLIENT_EVENTS.REACT, { participantId: target, emoji });
+      return (await seen).state;
+    };
+
+    expect(reactionOn(await react("\u{1f44f}"), target, author)).toBe("\u{1f44f}");
+    // Otro distinto sustituye al anterior: nunca hay dos del mismo autor.
+    expect(reactionOn(await react("\u{1f525}"), target, author)).toBe("\u{1f525}");
+    // Y repetirlo lo retira.
+    expect(reactionOn(await react("\u{1f525}"), target, author)).toBeUndefined();
+  });
+
+  it("una ronda nueva deja la mesa sin emoticones", async () => {
+    const host = await createRoom("Ana");
+    const guest = await joinRoom(host.credentials.roomCode, "Bea");
+    host.socket.emit(CLIENT_EVENTS.REACT, {
+      participantId: guest.credentials.participantId,
+      emoji: "\u{1f389}",
+    });
+    await waitFor<{ state: PublicRoomState }>(host.socket, SERVER_EVENTS.ROOM_STATE);
+
+    const restarted = waitFor<{ state: PublicRoomState }>(
+      host.socket,
+      SERVER_EVENTS.ROUND_RESTARTED,
+    );
+    host.socket.emit(CLIENT_EVENTS.ROUND_RESTART, {});
+    const { state } = await restarted;
+    expect(state.participants.every((p) => p.reactions.length === 0)).toBe(true);
   });
 
   it("rechaza un emoticón que no está en la lista", async () => {

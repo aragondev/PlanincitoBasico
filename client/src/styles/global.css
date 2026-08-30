@@ -1340,6 +1340,12 @@ button.danger {
   animation: reaction-in 0.42s cubic-bezier(0.2, 1.5, 0.4, 1);
 }
 
+/* El que se va se queda un momento al lado del nuevo y luego sube y se
+   apaga: así se ve el relevo en vez de un cambio seco. */
+.seat__reaction--out {
+  animation: reaction-out 0.42s ease-in forwards;
+}
+
 @keyframes reaction-in {
   0% {
     opacity: 0;
@@ -1351,6 +1357,24 @@ button.danger {
   }
   100% {
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes reaction-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    margin-inline: 0;
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.05) rotate(-8deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.45) rotate(-14deg);
+    /* Cede el sitio mientras se va, para que la fila no dé un salto. */
+    margin-inline: -0.5rem;
   }
 }
 
@@ -1387,6 +1411,29 @@ button.danger {
   grid-template-columns: repeat(4, 34px);
   justify-content: center;
   gap: 0.15rem;
+}
+
+/* Cerrado es un solo botón; el listado se despliega desde él. */
+.seatmenu__row--open {
+  grid-template-columns: 34px;
+}
+
+.seatmenu__row--emoji {
+  animation: emoji-in 0.18s var(--ease);
+}
+
+@keyframes emoji-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+/* El emoticón que ya pusiste: se marca para que se vea que volver a
+   elegirlo lo quita. */
+.seatmenu__item--on {
+  background: var(--brand-container);
+  box-shadow: inset 0 0 0 2px var(--brand);
 }
 
 /* Los objetos que se lanzan caben en una fila, y así se distinguen de los
@@ -1434,71 +1481,13 @@ button.danger {
   }
 }
 
-/* Proyectil en vuelo: decorativo, nunca intercepta clics. */
-.flight {
+/* Escenario de los lanzamientos: un solo lienzo para todos los objetos en
+   vuelo, con el motor de física detrás. Decorativo, nunca intercepta clics. */
+.throwstage {
   position: fixed;
-  inset-block-start: 0;
-  inset-inline-start: 0;
+  inset: 0;
   z-index: 30;
-  font-size: 1.6rem;
-  line-height: 1;
   pointer-events: none;
-  /* El transform de la animación posiciona el elemento; este margen lo centra. */
-  margin: -0.8rem 0 0 -0.8rem;
-  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 35%));
-  /* Sin esto se veía un instante en la esquina superior izquierda: el nodo
-     ya existe cuando la animación aún no lo ha colocado. */
-  opacity: 0;
-}
-
-.flight__glyph {
-  inline-size: 1.6rem;
-  block-size: 1.6rem;
-  display: block;
-  line-height: 1;
-}
-
-/* Lo que salta del golpe. Comparten origen y colocación con el proyectil:
-   los sitúa el transform de su animación, no el flujo del documento. */
-.shard,
-.shockwave,
-.splat {
-  position: fixed;
-  inset-block-start: 0;
-  inset-inline-start: 0;
-  z-index: 29;
-  pointer-events: none;
-  opacity: 0;
-}
-
-.shard {
-  border-radius: 1px;
-  margin: -2px 0 0 -2px;
-}
-
-/* Las gotas son redondas; las astillas, alargadas. */
-.shard--drop {
-  border-radius: 50%;
-}
-
-.shockwave {
-  inline-size: 56px;
-  block-size: 56px;
-  margin: -28px 0 0 -28px;
-  border: 2px solid currentColor;
-  border-radius: 50%;
-}
-
-.splat {
-  inline-size: 30px;
-  block-size: 22px;
-  margin: -11px 0 0 -15px;
-  border-radius: 48% 52% 40% 60% / 60% 44% 56% 40%;
-  background: radial-gradient(
-    circle at 42% 38%,
-    rgb(255 95 82 / 95%),
-    rgb(184 40 34 / 88%) 70%
-  );
 }
 
 /* Aviso de versión nueva: sobre todo lo demás, pero sin tapar el mazo. */

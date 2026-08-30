@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { REACTIONS, THROWABLES, type Reaction, type Throwable } from "@planincito/shared";
+import { ReactionIcon } from "./Icon";
 
 /**
  * El avión y la flecha se dibujan en SVG: los emoji equivalentes son
@@ -55,32 +56,40 @@ export function ThrowableIcon({
   return <span className={className}>{THROWABLE_GLYPH[item]}</span>;
 }
 
-/** Un emoticón dejado sobre una carta; vive unos segundos y se borra solo. */
-export type SeatReaction = {
-  id: number;
-  toId: string;
-  emoji: Reaction;
-};
-
 type Props = {
   alias: string;
   /** Sólo hay objetos que lanzar mientras esa persona siga sin votar. */
   canThrow: boolean;
+  /** El emoticón que yo puse en esta carta, si es que puse alguno. */
+  mine: Reaction | null;
   onReact: (emoji: Reaction) => void;
   onPick: (item: Throwable) => void;
   onClose: () => void;
 };
 
 /**
- * Menú del asiento: emoticones para reaccionar sobre cualquier carta y, si
- * quien la ocupa aún no ha votado, objetos para meterle prisa.
+ * Menú del asiento. De entrada sólo se ve un botón de emoticón —o el que ya
+ * pusiste—, que despliega el listado; ocho caritas siempre a la vista hacían
+ * del menú un tablón. Debajo, si quien ocupa la carta aún no ha votado, los
+ * objetos para meterle prisa.
  */
-export function SeatMenu({ alias, canThrow, onReact, onPick, onClose }: Props) {
+export function SeatMenu({
+  alias,
+  canThrow,
+  mine,
+  onReact,
+  onPick,
+  onClose,
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const [picking, setPicking] = useState(false);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      // La primera pulsación cierra el listado; la segunda, el menú entero.
+      if (event.key !== "Escape") return;
+      if (picking) setPicking(false);
+      else onClose();
     };
     /**
      * Se cierra al pulsar fuera, pero no dentro del propio asiento: la carta
@@ -99,7 +108,7 @@ export function SeatMenu({ alias, canThrow, onReact, onPick, onClose }: Props) {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("pointerdown", onPointerDown);
     };
-  }, [onClose]);
+  }, [onClose, picking]);
 
   return (
     <div
@@ -108,24 +117,68 @@ export function SeatMenu({ alias, canThrow, onReact, onPick, onClose }: Props) {
       role="menu"
       aria-label={`Reaccionar a la carta de ${alias}`}
     >
-      <div className="seatmenu__row">
-        {REACTIONS.map((emoji) => (
+      {picking ? (
+        <div className="seatmenu__row seatmenu__row--emoji">
+          {REACTIONS.map((emoji) => {
+            const chosen = mine === emoji;
+            return (
+              <button
+                key={emoji}
+                type="button"
+                role="menuitemradio"
+                aria-checked={chosen}
+                className={`seatmenu__item${chosen ? " seatmenu__item--on" : ""}`}
+                title={
+                  chosen
+                    ? `Quitar ${emoji} de la carta de ${alias}`
+                    : `Reaccionar con ${emoji} a ${alias}`
+                }
+                aria-label={
+                  chosen
+                    ? `Quitar ${emoji} de la carta de ${alias}`
+                    : `Reaccionar con ${emoji} sobre la carta de ${alias}`
+                }
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onReact(emoji);
+                }}
+              >
+                <span className="seatmenu__glyph">{emoji}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="seatmenu__row seatmenu__row--open">
           <button
-            key={emoji}
             type="button"
             role="menuitem"
-            className="seatmenu__item"
-            title={`Reaccionar con ${emoji} a ${alias}`}
-            aria-label={`Reaccionar con ${emoji} sobre la carta de ${alias}`}
+            className={`seatmenu__item${mine ? " seatmenu__item--on" : ""}`}
+            aria-expanded={false}
+            aria-haspopup="true"
+            title={
+              mine
+                ? `Cambiar o quitar tu ${mine} en la carta de ${alias}`
+                : `Reaccionar a la carta de ${alias}`
+            }
+            aria-label={
+              mine
+                ? `Cambiar o quitar tu emoticón en la carta de ${alias}`
+                : `Elegir un emoticón para la carta de ${alias}`
+            }
             onClick={(event) => {
               event.stopPropagation();
-              onReact(emoji);
+              setPicking(true);
             }}
           >
-            <span className="seatmenu__glyph">{emoji}</span>
+            {mine ? (
+              <span className="seatmenu__glyph">{mine}</span>
+            ) : (
+              <ReactionIcon className="seatmenu__glyph" />
+            )}
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
       {canThrow && (
         <div className="seatmenu__row seatmenu__row--throw">

@@ -8,7 +8,8 @@ import type {
 } from "@planincito/shared";
 import { cardLabel } from "./PokerCard";
 import { EyeIcon } from "./Icon";
-import { SeatMenu, type SeatReaction } from "./SeatMenu";
+import { SeatMenu } from "./SeatMenu";
+import { SeatReactions } from "./SeatReactions";
 import { ResultsSummary } from "./VotingResults";
 
 /** Margen antes de atenuar a alguien que se acaba de desconectar. */
@@ -48,18 +49,19 @@ function Seat({
   participant,
   revealed,
   isMe,
-  reactions,
+  myId,
   onThrow,
   onReact,
 }: {
   participant: PublicParticipant;
   revealed: boolean;
   isMe: boolean;
-  reactions: SeatReaction[];
+  myId: string | null;
   onThrow: (participantId: string, item: Throwable) => void;
   onReact: (participantId: string, emoji: Reaction) => void;
 }) {
-  const { alias, role, connected, hasVoted, vote, participantId } = participant;
+  const { alias, role, connected, hasVoted, vote, participantId, reactions } =
+    participant;
   const [menuOpen, setMenuOpen] = useState(false);
   const offline = useSettledOffline(connected);
   // En escritorio el menú de lanzar se abre al pasar el ratón, así que el clic
@@ -74,6 +76,10 @@ function Seat({
   const canThrow = !spectator && !isMe && !hasVoted && !revealed;
   // El volteo sólo ocurre cuando hay carta que mostrar.
   const flipped = revealed && vote !== undefined;
+
+  // El mío se marca en el listado: volver a elegirlo es lo que lo quita.
+  const mine =
+    reactions.find((reaction) => reaction.fromId === myId)?.emoji ?? null;
 
   const situation = spectator
     ? "espectador"
@@ -128,20 +134,13 @@ function Seat({
           )}
         </button>
 
-        {reactions.length > 0 && (
-          <span className="seat__reactions" aria-hidden="true">
-            {reactions.map((reaction) => (
-              <span key={reaction.id} className="seat__reaction">
-                {reaction.emoji}
-              </span>
-            ))}
-          </span>
-        )}
+        <SeatReactions reactions={reactions} />
 
         {menuOpen && (
           <SeatMenu
             alias={alias}
             canThrow={canThrow}
+            mine={mine}
             onReact={(emoji) => {
               onReact(participantId, emoji);
               setMenuOpen(false);
@@ -167,8 +166,6 @@ type Props = {
   onRestart: () => void;
   onThrow: (participantId: string, item: Throwable) => void;
   onReact: (participantId: string, emoji: Reaction) => void;
-  /** Emoticones vivos ahora mismo, de cualquier asiento de la mesa. */
-  reactions: SeatReaction[];
   /** Segundos que faltan para revelar, o `null` si no hay cuenta atrás. */
   countdown: number | null;
   /** Resumen que se muestra en la mesa una vez reveladas las cartas. */
@@ -183,13 +180,10 @@ export function PokerTable({
   onRestart,
   onThrow,
   onReact,
-  reactions,
   countdown,
   results,
 }: Props) {
   const revealed = state.status === "revealed";
-  const reactionsFor = (participantId: string) =>
-    reactions.filter((reaction) => reaction.toId === participantId);
   const others = state.participants.filter((p) => p.participantId !== myId);
   const me = state.participants.find((p) => p.participantId === myId);
 
@@ -217,7 +211,7 @@ export function PokerTable({
             participant={participant}
             revealed={revealed}
             isMe={false}
-            reactions={reactionsFor(participant.participantId)}
+            myId={myId}
             onThrow={onThrow}
             onReact={onReact}
           />
@@ -281,7 +275,7 @@ export function PokerTable({
             participant={participant}
             revealed={revealed}
             isMe={false}
-            reactions={reactionsFor(participant.participantId)}
+            myId={myId}
             onThrow={onThrow}
             onReact={onReact}
           />
@@ -292,7 +286,7 @@ export function PokerTable({
             participant={me}
             revealed={revealed}
             isMe
-            reactions={reactionsFor(me.participantId)}
+            myId={myId}
             onThrow={onThrow}
             onReact={onReact}
           />

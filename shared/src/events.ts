@@ -52,7 +52,6 @@ export const SERVER_EVENTS = {
   SERVER_RESTARTING: "server:restarting",
   ROOM_CLOSED: "room:closed",
   THROWN: "participant:thrown",
-  REACTED: "participant:reacted",
   COUNTDOWN_STARTED: "votes:countdown-started",
 } as const;
 
@@ -92,7 +91,10 @@ export type ClientToServerEvents = {
     participantId: string;
     item: Throwable;
   }) => void;
-  /** Deja un emoticón sobre la carta de alguien; vale para cualquier asiento. */
+  /**
+   * Pone, cambia o quita el emoticón propio sobre la carta de alguien; vale
+   * para cualquier asiento. Repetir el mismo emoticón lo retira.
+   */
   [CLIENT_EVENTS.REACT]: (payload: {
     participantId: string;
     emoji: Reaction;
@@ -150,12 +152,5 @@ export type ServerToClientEvents = {
     fromAlias: string;
     toId: string;
     item: Throwable;
-  }) => void;
-  /** Tampoco cambia el estado: el emoticón vive unos segundos en la carta. */
-  [SERVER_EVENTS.REACTED]: (payload: {
-    fromId: string;
-    fromAlias: string;
-    toId: string;
-    emoji: Reaction;
   }) => void;
 };
