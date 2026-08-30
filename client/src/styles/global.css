@@ -1490,6 +1490,19 @@ button.danger {
   pointer-events: none;
 }
 
+/*
+ * Un <canvas> es un elemento reemplazado: con la anchura en `auto`, `inset: 0`
+ * no lo estira, sino que toma su tamaño intrínseco, que es el del atributo
+ * `width`. En una pantalla retina ese atributo vale el doble del viewport, así
+ * que el lienzo medía 3024 px de ancho y todo se pintaba al doble, con la
+ * escena desplazada fuera de la pantalla. Hay que darle la medida a mano.
+ */
+.throwstage,
+.celebration {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
 /* Aviso de versión nueva: sobre todo lo demás, pero sin tapar el mazo. */
 .update-banner {
   position: fixed;

@@ -107,6 +107,47 @@ test("la sesión sobrevive a recargar la pestaña", async ({ page }) => {
   await expect(page.getByLabel("Tu alias")).toHaveCount(0);
 });
 
+/**
+ * Un `<canvas>` es un elemento reemplazado: con la anchura en `auto`, `inset: 0`
+ * no lo estira, sino que le deja su tamaño intrínseco, el del atributo `width`.
+ * Como ese atributo se fija en píxeles físicos, en una pantalla retina el
+ * lienzo medía el doble que la ventana y toda la escena se pintaba al doble,
+ * fuera de sitio. A escala 1 no se nota, así que hay que probarlo a 2.
+ */
+test("en pantalla retina el lienzo mide lo que la ventana", async ({ browser }) => {
+  const medidas = { viewport: { width: 1200, height: 800 }, deviceScaleFactor: 2 };
+
+  const anfitrionCtx = await browser.newContext(medidas);
+  const anfitrion = await anfitrionCtx.newPage();
+  await anfitrion.goto("./");
+  await anfitrion.getByLabel("Tu alias").fill("Ana");
+  await anfitrion.getByRole("button", { name: "Crear sala" }).click();
+  const codigo = (await anfitrion.locator(".room-header__code strong").textContent())!.trim();
+
+  // Contexto aparte: dos pestañas del mismo navegador comparten la sesión.
+  const invitadoCtx = await browser.newContext(medidas);
+  const invitado = await invitadoCtx.newPage();
+  await invitado.goto(`./#/room/${codigo}`);
+  await invitado.getByLabel("Tu alias").fill("Bea");
+  await invitado.getByRole("button", { name: "Entrar" }).click();
+  await expect(anfitrion.locator(".seat")).toHaveCount(2);
+
+  await anfitrion.locator(".seat__card--pick").first().click();
+  await anfitrion.getByRole("menuitem", { name: /Piedra/ }).click();
+
+  const lienzo = anfitrion.locator("canvas.throwstage");
+  await expect(lienzo).toBeAttached();
+  expect(await lienzo.boundingBox()).toEqual({
+    x: 0,
+    y: 0,
+    width: medidas.viewport.width,
+    height: medidas.viewport.height,
+  });
+
+  await anfitrionCtx.close();
+  await invitadoCtx.close();
+});
+
 test("un código inexistente no saca al usuario de la portada", async ({ page }) => {
   await page.goto("./");
   await page.getByLabel("Tu alias").fill("Ana");
